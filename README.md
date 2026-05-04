@@ -15,11 +15,11 @@ A detail-oriented weather and forecast card.
 
 **Getting Started** · [Installation](#installation) · [Examples](#examples) · [Setup](#setup)
 
-**Customization** · [Appearance](#appearance) · [Color Mode](#color-mode)
+**Customization** · [Appearance](#appearance) · [CSS Variables](#css-variables) · [Color Mode](#color-mode)
 
 **Guides** · [Chips](#chips) · [Fonts & Icons](#fonts--icons) · [House Image](#custom-house-image)
 
-**Reference** · [CSS Variables](#css-variables) · [Performance](#performance)
+**Reference** · [Performance](#performance)
 
 <br>
 
@@ -70,7 +70,7 @@ A detail-oriented weather and forecast card.
 <img width="400" alt="Image" src="https://github.com/user-attachments/assets/bea6c454-97bb-4122-851d-5f13b0a7bea1" />
 
 <details>
-<summary><b>Standalone · Example 1 — Basic Card</b></summary>
+<summary><b>Standalone Mode — Basic Card</b></summary>
 
 <br>
 
@@ -103,7 +103,7 @@ tap_action:
 </details>
 
 <details>
-<summary><b>Standalone · Example 2 — Chip Cards</b></summary>
+<summary><b>Standalone Mode — Chip Cards</b></summary>
 
 <br>
 <img width="400" alt="Image" src="https://github.com/user-attachments/assets/f5b0afbb-8f88-4a28-8cbc-34007c3d29c6" />
@@ -200,7 +200,7 @@ chips:
 </details>
 
 <details>
-<summary><b>Immersive · Example 1 — Header Card</b></summary>
+<summary><b>Immersive Mode — Header Card</b></summary>
 
 <br>
 
@@ -229,7 +229,7 @@ chips:
 </details>
 
 <details>
-<summary><b>Immersive · Example 2 — Custom Image</b></summary>
+<summary><b>Immersive Mode — Custom Image</b></summary>
 
 <br>
 
@@ -503,70 +503,135 @@ custom_cards:
 
 </details>
 
+<a name="css-variables"></a>
+<details>
+<summary><strong>CSS Variables</strong></summary>
+
+> Most users won't need these. The options above cover all common use cases. These CSS variables are here for fine-tuning specific details like font sizes, shadows, and spacing — either in your theme or via `card_mod`.
+
+<details>
+<summary><b>Card Variables</b></summary>
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `--awc-card-border-radius` | `12px` | Adjusts the corner radius. |
+| `--awc-card-border-width` | *HA theme* | Overrides the card's border width. Inherits from the Home Assistant theme by default. |
+| `--awc-card-padding` | `16px` | Padding space around the text. |
+| `--awc-canvas-filter` | `none` | Applies a custom CSS filter to the canvas (this overrides the `filter` config option). |
+| `--awc-stack-order` | `-1` / `1` | Controls the stacking order (z-index) of the card. Defaults to `-1` for immersive and `1` for standalone. |
+| `--awc-custom-cards-direction` | `row` | Flex direction of the custom cards container. |
+| `--awc-custom-cards-gap` | `8px` | Gap between items in the custom cards container. |
+| `--awc-custom-cards-justify` | `flex-start` | Horizontal justification of the custom cards container. |
+| `--awc-custom-cards-align` | `flex-start` | Vertical alignment of the custom cards container. |
+
+</details>
+
+<details>
+<summary><b>Text Variables</b></summary>
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `--awc-text-day` | `#2c2c2e` | Text color during the daytime. |
+| `--awc-text-night` | `#FFFFFF` | Text color during the nighttime. |
+| `--awc-text-color` | *auto* | Resolved text color for the current scheme. Overrides both day and night colors at once. |
+| `--awc-text-shadow-day` | *soft white glow* | Text shadow effect for daytime. |
+| `--awc-text-shadow-night` | *soft dark glow* | Text shadow effect for nighttime. |
+| `--awc-text-shadow-active` | *auto* | Resolved text shadow for the current scheme. Overrides both day and night shadows at once. |
+| `--awc-chip-text-shadow` | `0 1px 2px rgba(0,0,0,0.35)` | Text shadow applied to the chip name label. |
+| `--awc-top-font-size` | `clamp(24px, 11cqw, 52px)` | Top text size (dynamically responsive). |
+| `--awc-top-font-weight` | `600` | Top text weight. |
+| `--awc-top-padding` | `0` (`8px 14px` with background) | Padding around the top text. |
+| `--awc-bottom-font-size` | `clamp(15px, 5cqmin, 26px)` | Chip text size (dynamically responsive). |
+| `--awc-bottom-font-weight` | `500` | Chip text weight. |
+| `--awc-bottom-gap` | `8px` | Gap between chips in the row. |
+| `--awc-bottom-opacity` | `0.7` | Opacity of chips without a background. |
+| `--awc-chip-name-weight` | `700` | Font weight of the chip name label. |
+| `--awc-chip-name-opacity` | `0.7` | Opacity of the chip name label. |
+| `--awc-chip-name-color` | `inherit` | Color of the chip name label. |
+| `--awc-chip-gap` | `6px` | Gap between the icon and text inside each chip. |
+| `--awc-chips-padding` | `0` (`5px 10px` with background) | Inner padding of each chip. |
+| `--awc-row-width` | `calc(100% - padding)` | Width of the chips row. Overrides the `chips_width` option. |
+| `--awc-row-height` | `auto` | Height of the chips row. Overrides the `chips_height` option. |
+| `--awc-row-columns` | `3` | Number of columns when `chips_layout: grid` is active. |
+| `--awc-row-fade-l` | *auto* | Left edge fade width for the scrolling chip row. |
+| `--awc-row-fade-r` | *auto* | Right edge fade width for the scrolling chip row. |
+| `--awc-top-bg-color` | *auto* | Background color when `top_text_background` is enabled. Defaults to the active background style. |
+| `--awc-top-bg-radius` | *card radius* | Border radius for the top text background. |
+| `--awc-top-bg-filter` | `blur(10px)` | Backdrop filter for the top text background (only used by the `frosted` style). |
+| `--awc-bottom-bg-color` | *auto* | Background color when `chips_background` is enabled. Defaults to the active background style. |
+| `--awc-bottom-bg-radius` | *card radius* | Border radius for the chip background. |
+| `--awc-bottom-bg-filter` | `blur(10px)` | Backdrop filter for the chip background (only used by the `frosted` style). |
+| `--awc-bg-shadow` | *auto* | Overrides the shadow used by the `pill` background style. |
+| `--awc-bg-border` | `1px solid …` | Overrides the border used by the `frosted` background style. |
+| `--awc-icon-size` | `1.1em` | Size of the chip icon. |
+| `--awc-icon-drop-shadow` | `drop-shadow(0px 3px 6px rgba(0,0,0,0.3))` | Drop shadow filter applied to custom image icons set via `icon_path`. |
+| `--awc-marquee-duration` | `20s` | Animation duration for the marquee overflow mode. Longer = slower. |
+| `--awc-marquee-fade` | `12px` | Edge fade width on either side of a marquee chip. |
+| `--awc-marquee-separator` | `"•"` | Character inserted between marquee repetitions. |
+| `--awc-marquee-sep-gap` | `0.4em` | Padding around the marquee separator character. |
+
+</details>
+
+<details>
+<summary><b>Stacked & Vertical Chip Variables</b></summary>
+
+These variables only apply when `chip_format` is set to `stacked` or `vertical`.
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `--awc-stacked-icon-bg` | *auto* | Background color of the icon area in stacked/vertical chips. |
+| `--awc-stacked-icon-radius` | *auto* | Border radius of the icon area. |
+| `--awc-stacked-icon-inset` | `3px` | Inset used to calculate the icon area's border radius relative to the chip's border radius. |
+| `--awc-stacked-name-size` | `0.85em` | Font size of the name label in stacked/vertical chips. |
+| `--awc-stacked-name-weight` | `500` | Font weight of the name label in stacked/vertical chips. |
+| `--awc-stacked-name-tracking` | `0.03em` | Letter spacing of the name label in stacked/vertical chips. |
+| `--awc-stacked-name-opacity` | `0.6` | Opacity of the name label in stacked/vertical chips. |
+| `--awc-stacked-name-color` | `inherit` | Color of the name label in stacked/vertical chips. |
+| `--awc-stacked-value-weight` | `700` | Font weight of the value in stacked/vertical chips. |
+| `--awc-stacked-column-gap` | `10px` | Horizontal gap between the icon and text columns in stacked chips. |
+| `--awc-stacked-row-gap` | `4px` | Vertical gap between the name and value rows in stacked/vertical chips. |
+| `--awc-vertical-icon-gap` | `6px` | Bottom margin of the icon in vertical chips. |
+
+</details>
+
+<details>
+  <summary><b>Card Mod Example</b></summary>
+
+  This example shows how you can apply styles to the card using `card_mod`.
+
+  ```yaml
+  type: custom:atmospheric-weather-card
+  weather_entity: weather.your_weather_entity
+  card_mod:
+    style: |
+      :host {
+        --awc-text-day: #ffffff;
+        --awc-text-night: #ffffff;
+        --awc-text-shadow-day: 0 1px 2px rgba(0, 0, 0, 0.15);
+        --awc-text-shadow-night: 0 1px 2px rgba(0, 0, 0, 0.8);
+      }
+  ```
+</details>
+
+</details>
+
 <br>
 
 ## Color Mode
 
-The card's look is controlled by two things: your **`sun_entity`**, which handles the sun, moon, and stars in the sky, and your **theme**, which decides whether the card looks light or dark. Here are the ways you can set this up.
+The card's look is controlled by two things: your **`sun_entity`**, which handles the sun, moon, and stars in the sky, and your **theme**, which decides whether the card looks light or dark.
 
 <details>
-<summary><strong>Follow your Home Assistant theme</strong></summary>
+<summary><strong>Here are the ways you can set this up</strong></summary>
 
 <br>
 
-Android and iOS can auto-toggle dark mode based on sunrise and sunset, and this use case is exactly what this card was designed for. With `sun_entity` configured, the card shows the sun during the day and the moon at night, automatically syncing its colors to whatever your Home Assistant theme is doing.
-
-```yaml
-sun_entity: sun.sun
-```
-
-</details>
-
-<details>
-<summary><strong>Follow the sun instead of your theme</strong></summary>
-
-<br>
-
-If you want the card to switch between light and dark at the real sunrise and sunset regardless of what your Home Assistant theme is doing, point `theme_entity` at your sun entity:
-
-```yaml
-sun_entity: sun.sun
-theme_entity: sun.sun
-```
-
-Now the card goes light at sunrise and dark at sunset on its own, and its colors match the time of day no matter what the rest of your dashboard is doing.
-
-</details>
-
-<details>
-<summary><strong>Force a fixed light or dark look</strong></summary>
-
-<br>
-
-If you want to lock the card's colors to one value and never change them:
-
-```yaml
-theme: dark   # or: light
-```
-
-The sky still follows `sun_entity`, so you still get the moon and stars at night — only the card's colors are forced.
-
-Most users don't need this. If your Home Assistant theme is always the same color, the default already handles it correctly.
-
-</details>
-
-<details>
-<summary><strong>Custom logic via any entity</strong></summary>
-
-<br>
-
-`theme_entity` can point at any entity, not just the sun. Use a template sensor, an `input_boolean`, a helper toggled by an automation — anything you want. The card switches to its dark look when the entity's state is one of: `dark`, `night`, `evening`, `on`, `true`, or `below_horizon`. Anything else counts as light.
-
-```yaml
-theme_entity: sensor.my_custom_mode
-```
-
-Useful if you want something like "dark after 9pm", "dark when it's overcast", or any other rule you can express in a template or automation.
+| Mode | Config | What it does |
+| :--- | :--- | :--- |
+| **Follow your HA theme** | `sun_entity: sun.sun` | The card shows the sun during the day and the moon at night, syncing its colors to whatever your Home Assistant theme is doing. Android and iOS can auto-toggle dark mode based on sunrise and sunset — this is exactly what the card was designed for. |
+| **Follow the sun** | `sun_entity: sun.sun`<br>`theme_entity: sun.sun` | The card switches between light and dark at the real sunrise and sunset, regardless of what your Home Assistant theme is doing. Its colors match the time of day no matter what the rest of your dashboard looks like. |
+| **Force light or dark** | `theme: dark`<br>or `theme: light` | Locks the card's colors to one value. The sky still follows `sun_entity`, so you still get the moon and stars at night — only the card's colors are forced. Most users don't need this; if your theme is always the same color, the default already handles it. |
+| **Custom logic** | `theme_entity: sensor.my_custom_mode` | `theme_entity` can point at any entity — a template sensor, an `input_boolean`, or anything else. The card switches to its dark look when the state is `dark`, `night`, `evening`, `on`, `true`, or `below_horizon`. Anything else counts as light. Useful for rules like "dark after 9pm" or "dark when it's overcast". |
 
 </details>
 
@@ -677,6 +742,8 @@ Free-positioned chips can still use all the same styling and forecast options as
 
 </details>
 
+<br>
+
 </details>
 
 <a name="fonts--icons"></a>
@@ -715,6 +782,8 @@ The card then resolves the icon by the current weather state. For example, `rain
 
 </details>
 
+<br>
+
 </details>
 
 <a name="custom-house-image"></a>
@@ -730,117 +799,8 @@ This explains how to create an image for your own home and use it in the card.
 4. **Create day and night variants** by adjusting the prompt appropriately.
 5. **Upload the files** to your `config/www/images/` directory and reference them in the card config as `/local/images/my-house-day.png`.
 
-</details>
-
 <br>
 
-## CSS Variables
-
-> [!NOTE]
-> Most users won't need these. The options above cover all common use cases. These CSS variables are here for fine-tuning specific details like font sizes, shadows, and spacing — either in your theme or via `card_mod`.
-
-<details>
-<summary><b>Card Variables</b></summary>
-
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `--awc-card-border-radius` | `12px` | Adjusts the corner radius. |
-| `--awc-card-border-width` | *HA theme* | Overrides the card's border width. Inherits from the Home Assistant theme by default. |
-| `--awc-card-padding` | `16px` | Padding space around the text. |
-| `--awc-canvas-filter` | `none` | Applies a custom CSS filter to the canvas (this overrides the `filter` config option). |
-| `--awc-stack-order` | `-1` / `1` | Controls the stacking order (z-index) of the card. Defaults to `-1` for immersive and `1` for standalone. |
-| `--awc-custom-cards-direction` | `row` | Flex direction of the custom cards container. |
-| `--awc-custom-cards-gap` | `8px` | Gap between items in the custom cards container. |
-| `--awc-custom-cards-justify` | `flex-start` | Horizontal justification of the custom cards container. |
-| `--awc-custom-cards-align` | `flex-start` | Vertical alignment of the custom cards container. |
-
-</details>
-
-<details>
-<summary><b>Text Variables</b></summary>
-
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `--awc-text-day` | `#2c2c2e` | Text color during the daytime. |
-| `--awc-text-night` | `#FFFFFF` | Text color during the nighttime. |
-| `--awc-text-color` | *auto* | Resolved text color for the current scheme. Overrides both day and night colors at once. |
-| `--awc-text-shadow-day` | *soft white glow* | Text shadow effect for daytime. |
-| `--awc-text-shadow-night` | *soft dark glow* | Text shadow effect for nighttime. |
-| `--awc-text-shadow-active` | *auto* | Resolved text shadow for the current scheme. Overrides both day and night shadows at once. |
-| `--awc-chip-text-shadow` | `0 1px 2px rgba(0,0,0,0.35)` | Text shadow applied to the chip name label. |
-| `--awc-top-font-size` | `clamp(24px, 11cqw, 52px)` | Top text size (dynamically responsive). |
-| `--awc-top-font-weight` | `600` | Top text weight. |
-| `--awc-top-padding` | `0` (`8px 14px` with background) | Padding around the top text. |
-| `--awc-bottom-font-size` | `clamp(15px, 5cqmin, 26px)` | Chip text size (dynamically responsive). |
-| `--awc-bottom-font-weight` | `500` | Chip text weight. |
-| `--awc-bottom-gap` | `8px` | Gap between chips in the row. |
-| `--awc-bottom-opacity` | `0.7` | Opacity of chips without a background. |
-| `--awc-chip-name-weight` | `700` | Font weight of the chip name label. |
-| `--awc-chip-name-opacity` | `0.7` | Opacity of the chip name label. |
-| `--awc-chip-name-color` | `inherit` | Color of the chip name label. |
-| `--awc-chip-gap` | `6px` | Gap between the icon and text inside each chip. |
-| `--awc-chips-padding` | `0` (`5px 10px` with background) | Inner padding of each chip. |
-| `--awc-row-width` | `calc(100% - padding)` | Width of the chips row. Overrides the `chips_width` option. |
-| `--awc-row-height` | `auto` | Height of the chips row. Overrides the `chips_height` option. |
-| `--awc-row-columns` | `3` | Number of columns when `chips_layout: grid` is active. |
-| `--awc-row-fade-l` | *auto* | Left edge fade width for the scrolling chip row. |
-| `--awc-row-fade-r` | *auto* | Right edge fade width for the scrolling chip row. |
-| `--awc-top-bg-color` | *auto* | Background color when `top_text_background` is enabled. Defaults to the active background style. |
-| `--awc-top-bg-radius` | *card radius* | Border radius for the top text background. |
-| `--awc-top-bg-filter` | `blur(10px)` | Backdrop filter for the top text background (only used by the `frosted` style). |
-| `--awc-bottom-bg-color` | *auto* | Background color when `chips_background` is enabled. Defaults to the active background style. |
-| `--awc-bottom-bg-radius` | *card radius* | Border radius for the chip background. |
-| `--awc-bottom-bg-filter` | `blur(10px)` | Backdrop filter for the chip background (only used by the `frosted` style). |
-| `--awc-bg-shadow` | *auto* | Overrides the shadow used by the `pill` background style. |
-| `--awc-bg-border` | `1px solid …` | Overrides the border used by the `frosted` background style. |
-| `--awc-icon-size` | `1.1em` | Size of the chip icon. |
-| `--awc-icon-drop-shadow` | `drop-shadow(0px 3px 6px rgba(0,0,0,0.3))` | Drop shadow filter applied to custom image icons set via `icon_path`. |
-| `--awc-marquee-duration` | `20s` | Animation duration for the marquee overflow mode. Longer = slower. |
-| `--awc-marquee-fade` | `12px` | Edge fade width on either side of a marquee chip. |
-| `--awc-marquee-separator` | `"•"` | Character inserted between marquee repetitions. |
-| `--awc-marquee-sep-gap` | `0.4em` | Padding around the marquee separator character. |
-
-</details>
-
-<details>
-<summary><b>Stacked & Vertical Chip Variables</b></summary>
-
-These variables only apply when `chip_format` is set to `stacked` or `vertical`.
-
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `--awc-stacked-icon-bg` | *auto* | Background color of the icon area in stacked/vertical chips. |
-| `--awc-stacked-icon-radius` | *auto* | Border radius of the icon area. |
-| `--awc-stacked-icon-inset` | `3px` | Inset used to calculate the icon area's border radius relative to the chip's border radius. |
-| `--awc-stacked-name-size` | `0.85em` | Font size of the name label in stacked/vertical chips. |
-| `--awc-stacked-name-weight` | `500` | Font weight of the name label in stacked/vertical chips. |
-| `--awc-stacked-name-tracking` | `0.03em` | Letter spacing of the name label in stacked/vertical chips. |
-| `--awc-stacked-name-opacity` | `0.6` | Opacity of the name label in stacked/vertical chips. |
-| `--awc-stacked-name-color` | `inherit` | Color of the name label in stacked/vertical chips. |
-| `--awc-stacked-value-weight` | `700` | Font weight of the value in stacked/vertical chips. |
-| `--awc-stacked-column-gap` | `10px` | Horizontal gap between the icon and text columns in stacked chips. |
-| `--awc-stacked-row-gap` | `4px` | Vertical gap between the name and value rows in stacked/vertical chips. |
-| `--awc-vertical-icon-gap` | `6px` | Bottom margin of the icon in vertical chips. |
-
-</details>
-
-<details>
-  <summary><b>Card Mod Example</b></summary>
-
-  This example shows how you can apply styles to the card using `card_mod`.
-
-  ```yaml
-  type: custom:atmospheric-weather-card
-  weather_entity: weather.your_weather_entity
-  card_mod:
-    style: |
-      :host {
-        --awc-text-day: #ffffff;
-        --awc-text-night: #ffffff;
-        --awc-text-shadow-day: 0 1px 2px rgba(0, 0, 0, 0.15);
-        --awc-text-shadow-night: 0 1px 2px rgba(0, 0, 0, 0.8);
-      }
-  ```
 </details>
 
 <br>
