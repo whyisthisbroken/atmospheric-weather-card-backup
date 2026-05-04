@@ -643,7 +643,7 @@ The card's look is controlled by two things: your **`sun_entity`**, which handle
 <details>
 <summary><b>Chips</b></summary>
 
-Chips are the core building blocks of this card. Each chip is its own independent display unit — it picks an entity, reads a value (live or forecasted), and shows it with an optional icon and label. You can style each chip individually and even pull it out of the row to place it anywhere on the card.
+Chips are basically buttons you can optionally add to the card. You can add as many as you like and show live info, like current weather conditions or data from any Home Assistant entity, but also weather forecasts. You can leave them grouped in a row and make them all look the same (useful for building a daily forecast), or you can style and position each one individually.
 
 <details>
 <summary><strong>Forecast chips</strong></summary>
