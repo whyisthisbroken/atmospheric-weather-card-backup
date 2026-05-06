@@ -1,6 +1,6 @@
 /**
  * ATMOSPHERIC WEATHER CARD
- * Version: 4.1
+ * Version: 4.2
  * * https://github.com/shpongledsummer/atmospheric-weather-card
  */
 console.info(
@@ -644,6 +644,130 @@ class CloudShapeGenerator {
         };
     }
 }
+// ── MIGRATION BLOCK ─────────────────────────
+function _migrateConfig(raw) {
+    const c = { ...raw };
+    const rename = (oldKey, newKey) => {
+        if (c[oldKey] !== undefined && c[newKey] === undefined) {
+            c[newKey] = c[oldKey];
+        }
+        delete c[oldKey];
+    };
+    rename('offset',              'card_offset');
+    rename('square',              'card_square');
+    rename('stack_order',         'card_stack_order');
+    rename('full_width',          'card_full_width');
+    rename('filter',              'card_filter');
+    rename('css_mask_vertical',   'card_mask_vertical');
+    rename('css_mask_horizontal', 'card_mask_horizontal');
+    rename('disable_text',        'card_hide_text');
+    rename('tap_action',          'card_tap_action');
+    rename('background_style',    'card_background_style');
+    rename('day',                 'image_day');
+    rename('night',               'image_night');
+    rename('theme',               'card_color_mode');
+    rename('sun_moon_size', 'celestial_size');
+    rename('moon_style',    'celestial_moon_style');
+    if (c.celestial_alignment === undefined) {
+        const oldX = c.sun_moon_x_position ?? c.celestial_x;
+        const oldY = c.sun_moon_y_position ?? c.celestial_y;
+        if (oldX !== undefined || oldY !== undefined) {
+            const xStr = String(oldX ?? '').trim().toLowerCase();
+            const yStr = String(oldY ?? '').trim().toLowerCase();
+            const xIsCenter = xStr === 'center';
+            const yIsCenter = yStr === 'center';
+            const xVal = xIsCenter ? 0 : parseInt(xStr, 10) || 0;
+            const yVal = yIsCenter ? 0 : parseInt(yStr, 10) || 0;
+            const hSide = xIsCenter ? 'center' : (xVal < 0 ? 'right' : 'left');
+            const vSide = yIsCenter ? 'center' : 'top';
+            if (hSide === 'center' && vSide === 'center') {
+                c.celestial_alignment = 'center';
+            } else if (vSide === 'center') {
+                c.celestial_alignment = hSide;
+            } else {
+                c.celestial_alignment = `${vSide}-${hSide}`;
+            }
+            c.celestial_x = xIsCenter ? 0 : Math.max(0, Math.abs(xVal) - 31);
+            c.celestial_y = yIsCenter ? 0 : Math.max(0, Math.abs(yVal) - 31);
+        }
+    }
+    delete c.sun_moon_x_position;
+    delete c.sun_moon_y_position;
+    rename('image_offset_x',     'image_x');
+    rename('image_offset_y',     'image_y');
+    rename('status_image_day',   'status_day');
+    rename('status_image_night', 'status_night');
+    rename('disable_top_text',        'top_text_hide');
+    rename('top_text_sensor',         'top_text_entity');
+    rename('top_position',            'top_text_position');
+    rename('top_font_size',           'top_text_size');
+    rename('top_unit_format',         'top_text_unit');
+    rename('top_text_behind_weather', 'top_text_behind');
+    rename('disable_chips',           'chip_area_hide');
+    rename('chips_position',          'chip_area_position');
+    rename('chips_layout',            'chip_area_layout');
+    rename('chips_columns',           'chip_area_columns');
+    rename('chips_visible',           'chip_area_scroll_count');
+    rename('chips_width',             'chip_area_width');
+    rename('chips_height',            'chip_area_height');
+    rename('chips_align',             'chip_area_align');
+    rename('chips_grouped',           'chip_area_grouped');
+    rename('chips_separator',         'chip_area_separator');
+    rename('chips_full_width',        'chip_area_full_width');
+    rename('chips_container_padding', 'chip_area_padding');
+    rename('chips_container_bg_color','chip_area_background_color');
+    rename('chips_background',        'chip_area_background');
+    if (c.chip_inner_gap !== undefined) {
+        if (c.chip_area_gap === undefined && c.chip_gap !== undefined) c.chip_area_gap = c.chip_gap;
+        c.chip_gap = c.chip_inner_gap;
+        delete c.chip_inner_gap;
+    } else if (c.chip_gap !== undefined && c.chip_area_gap === undefined) {
+        const hasAnyOldKey = c.chips_position !== undefined || c.chips_layout !== undefined ||
+            c.chips_background !== undefined || c.disable_chips !== undefined;
+        if (hasAnyOldKey) {
+            c.chip_area_gap = c.chip_gap;
+            delete c.chip_gap;
+        }
+    }
+    rename('chip_format',         'chip_style');
+    rename('chips_font_size',     'chip_text_size');
+    rename('chips_name_font_size','chip_label_size');
+    rename('chips_padding',       'chip_padding');
+    rename('chip_icon_width',     'chip_icon_size');
+    rename('chip_icon_bg',        'chip_icon_background');
+    rename('chips_bg_color',      'chip_background_color');
+    rename('chips_icon_bg_color', 'chip_icon_background_color');
+    rename('chip_bg_color',            'chip_background_color');
+    rename('chip_icon_bg_color',       'chip_icon_background_color');
+    rename('chip_area_bg_color',       'chip_area_background_color');
+    if (c.chip_area_layout === 'scroll') c.chip_area_layout = 'horizontal-scroll';
+    if (Array.isArray(c.chips)) {
+        c.chips = c.chips.map(chip => {
+            if (!chip || typeof chip !== 'object') return chip;
+            const s = { ...chip };
+            const r = (o, n) => {
+                if (s[o] !== undefined && s[n] === undefined) s[n] = s[o];
+                delete s[o];
+            };
+            r('chip_format',       'style');
+            r('chip_align',        'align');
+            r('chip_background',   'background');
+            r('chip_bg_color',     'background_color');
+            r('bg_color',          'background_color');
+            r('chip_icon_bg_color','icon_background_color');
+            r('icon_bg_color',     'icon_background_color');
+            r('icon_bg',           'icon_background');
+            r('chip_padding',      'padding');
+            r('disable_icon',      'hide_icon');
+            r('font_size',         'text_size');
+            r('name_font_size',    'label_size');
+            if (s.overflow === 'marquee' && s.label_overflow === undefined) s.label_overflow = 'marquee';
+            return s;
+        });
+    }
+    return c;
+}
+// ── END MIGRATION BLOCK ─────────────────────────────────────────────────
 // MAIN CARD CLASS
 class AtmosphericWeatherCard extends HTMLElement {
     // CONSTRUCTOR & LIFECYCLE
@@ -752,15 +876,16 @@ class AtmosphericWeatherCard extends HTMLElement {
         this._initializationComplete = false;
     }
     setConfig(config) {
+        config = _migrateConfig(config);
         this._config = config;
         this._chips = this._deriveChips(this._config);
         this._initDOM();
-        if (config.stack_order !== undefined) {
-            this.style.setProperty('--awc-stack-order', config.stack_order);
+        if (config.card_stack_order !== undefined) {
+            this.style.setProperty('--awc-stack-order', config.card_stack_order);
         } else {
             this.style.removeProperty('--awc-stack-order');
         }
-        if (config.square) {
+        if (config.card_square) {
             this.style.height = 'auto';
             this.style.minHeight = '0';
             this.style.aspectRatio = '1 / 1';
@@ -804,11 +929,10 @@ class AtmosphericWeatherCard extends HTMLElement {
                 slot.style.bottom = padV; slot.style.top = 'auto';
             }
             slot.style.transform = t.join(' ');
-            const ox = config.image_offset_x !== undefined ? String(config.image_offset_x).trim() : '';
-            const oy = config.image_offset_y !== undefined ? String(config.image_offset_y).trim() : '';
+            const ox = config.image_x !== undefined ? String(config.image_x).trim() : '';
+            const oy = config.image_y !== undefined ? String(config.image_y).trim() : '';
             if (ox || oy) {
                 const tx2 = ox ? `translateX(${/[%a-z]/i.test(ox) ? ox : ox + 'px'})` : '';
-                // When bottom-anchored, negate Y so positive values move the image up (toward center)
                 let oyEffective = oy;
                 if (oy && v === 'bottom') {
                     oyEffective = oy.startsWith('-') ? oy.slice(1) : `-${oy}`;
@@ -819,21 +943,20 @@ class AtmosphericWeatherCard extends HTMLElement {
             }
         }
         const root = this._elements.root;
-        root.classList.toggle('no-mask-v', config.css_mask_vertical === false);
-        root.classList.toggle('no-mask-h', config.css_mask_horizontal === false);
-        const hasTapAction = config.tap_action && config.tap_action.action && config.tap_action.action !== 'none';
+        root.classList.toggle('no-mask-v', config.card_mask_vertical === false);
+        root.classList.toggle('no-mask-h', config.card_mask_horizontal === false);
+        const hasTapAction = config.card_tap_action && config.card_tap_action.action && config.card_tap_action.action !== 'none';
         root.classList.toggle('clickable', !!hasTapAction);
-        const filterVal = FILTER_PRESETS[(config.filter || '').toLowerCase()] || '';
+        const filterVal = FILTER_PRESETS[(config.card_filter || '').toLowerCase()] || '';
         root.style.setProperty('--_canvas-filter', filterVal || 'none');
-        this._hasStatusFeature = !!(config.status_entity && (config.status_image_day || config.status_image_night));
-        const csz = config.sun_moon_size != null ? parseInt(config.sun_moon_size, 10) : null;
+        this._hasStatusFeature = !!(config.status_entity && (config.status_day || config.status_night));
+        const csz = config.celestial_size != null ? parseInt(config.celestial_size, 10) : null;
         this._celestialSize = (csz && csz > 0) ? csz : null;
         this._customCardElements = [];
         this._prevCcSig = null;
         if (this._elements?.customCardsWrapper) {
             this._elements.customCardsWrapper.innerHTML = '';
             this._elements.customCardsWrapper.classList.toggle('has-cards', false);
-            // Remove previous user CSS class(es) if any, then apply new one(s)
             if (this._prevCustomCssClasses && this._prevCustomCssClasses.length) {
                 this._elements.customCardsWrapper.classList.remove(...this._prevCustomCssClasses);
             }
@@ -848,7 +971,7 @@ class AtmosphericWeatherCard extends HTMLElement {
             window.loadCardHelpers().then(helpers => {
                 const wrapper = this._elements?.customCardsWrapper;
                 if (!wrapper) return;
-                        if (this._config !== expectedConfig) return;
+                if (this._config !== expectedConfig) return;
                 for (const cardConfig of customCards) {
                     if (!cardConfig || !cardConfig.type) continue;
                     const el = helpers.createCardElement(cardConfig);
@@ -873,7 +996,8 @@ class AtmosphericWeatherCard extends HTMLElement {
             this._prevConfigSig = this._prevGrouped = this._prevVisKey =
             this._lastFreeSig = this._prevCardPadding = this._prevCardPadParsed =
             this._prevTopFS = this._prevBottomFS = this._prevChipNameFS =
-            this._prevChipIconWidth = this._prevChipIconPad = this._prevImageOffset = null;
+            this._prevChipIconWidth = this._prevChipIconPad = this._prevImageOffset =
+            this._prevContainerBgColor = this._prevChipTextGap = null;
         this._lastTempVal = this._lastTempUnit = null;
         this._nativeIconCache = null;
         this._prevHadVertVis = false;
@@ -890,7 +1014,7 @@ class AtmosphericWeatherCard extends HTMLElement {
         const moonObj = cfg.moon_phase_entity ? hass.states[cfg.moon_phase_entity] : null;
         const themeObj = cfg.theme_entity ? hass.states[cfg.theme_entity] : null;
         const statusObj = cfg.status_entity ? hass.states[cfg.status_entity] : null;
-        const topObj = cfg.top_text_sensor ? hass.states[cfg.top_text_sensor] : null;
+        const topObj = cfg.top_text_entity ? hass.states[cfg.top_text_entity] : null;
         if (this._lastSnapshot) {
             let changed = wObj !== this._refW || sunObj !== this._refSun || moonObj !== this._refMoon
                 || themeObj !== this._refTheme || statusObj !== this._refStatus || topObj !== this._refTop
@@ -918,7 +1042,7 @@ class AtmosphericWeatherCard extends HTMLElement {
         const moonEntity = this._config.moon_phase_entity ? hass.states[this._config.moon_phase_entity] : null;
         const themeEntity = this._config.theme_entity ? hass.states[this._config.theme_entity] : null;
         const statusEntity = this._config.status_entity ? hass.states[this._config.status_entity] : null;
-        const topSensor = this._config.top_text_sensor ? hass.states[this._config.top_text_sensor] : null;
+        const topSensor = this._config.top_text_entity ? hass.states[this._config.top_text_entity] : null;
         const botSig = this._chips.map(s => {
             if (!s.entity) return '';
             if (s.forecast) {
@@ -957,7 +1081,7 @@ class AtmosphericWeatherCard extends HTMLElement {
         };
         if (this._lastSnapshot && !this._hasSnapshotChanged(this._lastSnapshot, snapshot)) return;
         this._lastSnapshot = snapshot;
-        this._elements?.root?.classList.toggle('full-width', this._config.full_width === true);
+        this._elements?.root?.classList.toggle('full-width', this._config.card_full_width === true);
         if (!wEntity) return;
         if (moonEntity && moonEntity.state !== this._moonPhaseState) {
             this._moonPhaseState = moonEntity.state;
@@ -1004,7 +1128,7 @@ class AtmosphericWeatherCard extends HTMLElement {
     }
     static async getConfigElement() {
         if (!customElements.get("atmospheric-weather-card-editor")) 
-        { await import("./atmospheric-weather-card-editor.js?v=2026.0504"); }
+        { await import("./atmospheric-weather-card-editor.js?v=4.2.0"); }
         return document.createElement("atmospheric-weather-card-editor");
     }
     static getStubConfig() {
@@ -1015,21 +1139,22 @@ class AtmosphericWeatherCard extends HTMLElement {
             theme_entity: 'sun.sun',
             card_style: 'standalone',
             card_height: 130,
-            sun_moon_size: '50px',
+            celestial_size: '50px',
             celestial_position: 'fixed',
-            sun_moon_x_position: -65,
-            sun_moon_y_position: 'center',
-            top_position: 'top-left',
-            chips_position: 'bottom-left',
-            disable_chips: false,
-            top_font_size: '2.5em',
+            celestial_alignment: 'top-right',
+            celestial_x: 65,
+            celestial_y: 'center',
+            top_text_position: 'top-left',
+            chip_area_position: 'bottom-left',
+            chip_area_hide: false,
+            top_text_size: '2.5em',
             top_text_padding: '4px',
-            chips_font_size: '14px',
-            chips_padding: '8px 12px',
-            chip_inner_gap: '10px',
+            chip_text_size: '14px',
+            chip_padding: '8px 12px',
+            chip_gap: '10px',
             top_text_background: false,
-            chips_background: true,
-            tap_action: {
+            chip_area_background: true,
+            card_tap_action: {
                 action: 'more-info',
                 entity: 'weather.your_weather_entity'
             },
@@ -1047,6 +1172,7 @@ class AtmosphericWeatherCard extends HTMLElement {
         };
     }
     // CONFIGURATION HELPERS
+    // CONFIGURATION HELPERS
     _deriveChips(config) {
         const arr = config && config.chips;
         if (Array.isArray(arr) && arr.length > 0) {
@@ -1056,10 +1182,10 @@ class AtmosphericWeatherCard extends HTMLElement {
     }
     _resolveTextPositions() {
         const c = this._config || {};
-        return { top: c.top_position || 'top-left', chips: c.chips_position || 'bottom-left' };
+        return { top: c.top_text_position || 'top-left', chips: c.chip_area_position || 'bottom-left' };
     }
     _resolveAxes(sunEntity, themeEntity, sysDark) {
-        const mode = this._config.theme ? this._config.theme.toLowerCase() : null;
+        const mode = this._config.card_color_mode ? this._config.card_color_mode.toLowerCase() : null;
             const themeValid = themeEntity &&
             themeEntity.state !== 'unavailable' &&
             themeEntity.state !== 'unknown';
@@ -1119,7 +1245,7 @@ class AtmosphericWeatherCard extends HTMLElement {
         }
     }
     _resolveSensorValue(hass, entityId, attribute) {
-        let value, unit = '', haFormatted = false;
+        let value, unit = '', haFormatted = false, rawNumeric = null;
         const sensor = hass.states[entityId];
         if (!sensor) {
             value = 'N/A';
@@ -1130,6 +1256,7 @@ class AtmosphericWeatherCard extends HTMLElement {
             } else if (typeof hass.formatEntityAttributeValue === 'function') {
                 value = hass.formatEntityAttributeValue(sensor, attribute);
                 haFormatted = true;
+                rawNumeric = raw;
             } else {
                 value = raw;
                 unit = sensor.attributes[`${attribute}_unit`] || sensor.attributes.unit_of_measurement || '';
@@ -1137,6 +1264,7 @@ class AtmosphericWeatherCard extends HTMLElement {
         } else if (typeof hass.formatEntityState === 'function') {
             value = hass.formatEntityState(sensor);
             haFormatted = true;
+            rawNumeric = sensor.state;
         } else {
             value = sensor.state;
             unit = sensor.attributes.unit_of_measurement || '';
@@ -1146,7 +1274,7 @@ class AtmosphericWeatherCard extends HTMLElement {
             const isNumeric = value !== null && value !== '' && !isNaN(parseFloat(value)) && isFinite(value);
             if (isNumeric && this._numFmt) formatted = this._numFmt.format(value);
         }
-        return { formatted, unit, sensor };
+        return { formatted, unit, sensor, haFormatted, rawNumeric };
     }
     // FORECAST DATA LAYER
     _syncFc() {
@@ -1163,7 +1291,7 @@ class AtmosphericWeatherCard extends HTMLElement {
             (msg) => this._onFcData(key, msg.forecast ?? [], type === 'daily'),
             { type: 'weather/subscribe_forecast', forecast_type: type, entity_id: entity }
         ).then(unsub => {
-            if (!this._fcSubs.has(key) && !this._chips.some(c => c.forecast && c.entity === entity)) { unsub(); return; }
+            if (!this.isConnected || (!this._fcSubs.has(key) && !this._chips.some(c => c.forecast && c.entity === entity))) { unsub(); return; }
             this._fcSubs.set(key, unsub);
         }).catch(() => {
             const poll = async () => {
@@ -1221,6 +1349,9 @@ class AtmosphericWeatherCard extends HTMLElement {
                     : this._numFmt;
                 if (fmt) lowFmt = fmt.format(lowRaw);
             }
+            if (chip.forecast_low_position === 'below') {
+                return { formatted, unit, condition: entry.condition, datetime: entry.datetime, templow: lowFmt };
+            }
             formatted = `${lowFmt} – ${formatted}`;
         }
         return { formatted, unit, condition: entry.condition, datetime: entry.datetime };
@@ -1239,8 +1370,6 @@ class AtmosphericWeatherCard extends HTMLElement {
         else el.style.removeProperty(prop);
     }
     _hasSnapshotChanged(prev, next) {
-        // Explicit per-field comparison — V8 inlines and short-circuits.
-        // Faster than for...in over an object literal in the hot path.
         return prev.weather    !== next.weather
             || prev.temp       !== next.temp
             || prev.windSpeed  !== next.windSpeed
@@ -1264,8 +1393,8 @@ class AtmosphericWeatherCard extends HTMLElement {
         const state = stateObj.state.toLowerCase();
         if (ACTIVE_STATES.includes(state)) {
             return isNight
-                ? (this._config.status_image_night || this._config.status_image_day)
-                : (this._config.status_image_day || this._config.status_image_night);
+                ? (this._config.status_night || this._config.status_day)
+                : (this._config.status_day || this._config.status_night);
         }
         return null;
     }
@@ -1466,17 +1595,19 @@ class AtmosphericWeatherCard extends HTMLElement {
                 return { x: bodyR + (w - 2 * bodyR) * dyn.t, y: bodyR + (h * 0.85 - bodyR) * (1 - dyn.y01) };
             }
         }
-        const parseAxis = (raw, size, wrapNeg, fallback) => {
-            if (raw === undefined) return fallback;
-            const s = String(raw).trim().toLowerCase();
-            if (s === 'center') return size / 2;
-            const v = parseInt(s, 10);
-            return isNaN(v) ? fallback : (wrapNeg && v < 0 ? size + v : v);
-        };
-        return {
-            x: parseAxis(this._config.sun_moon_x_position, w, true, 100),
-            y: parseAxis(this._config.sun_moon_y_position, h, false, 100)
-        };
+        const align = (this._config.celestial_alignment || 'top-left').toLowerCase();
+        const [vSide, hSide] = parseAnchor(align);
+        const ox = parseInt(this._config.celestial_x, 10) || 0;
+        const oy = parseInt(this._config.celestial_y, 10) || 0;
+        const bodyR = this._celestialSize ? this._celestialSize / 2 : 31;
+        let x, y;
+        if (hSide === 'center') x = w / 2 + ox;
+        else if (hSide === 'right') x = w - ox - bodyR;
+        else x = ox + bodyR;
+        if (vSide === 'center') y = h / 2 + oy;
+        else if (vSide === 'bottom') y = h - oy - bodyR;
+        else y = oy + bodyR;
+        return { x, y };
     }
     _computeDynamicCelestial(mode) {
         const isNight = this._isTimeNight;
@@ -1638,7 +1769,7 @@ class AtmosphericWeatherCard extends HTMLElement {
                 position: absolute; pointer-events: none; font-family: var(--ha-font-family, var(--paper-font-body1_-_font-family, sans-serif)); transition: color 0.3s ease, text-shadow 0.3s ease; min-width: 0; max-width: calc(100% - var(--_awc-pad-h, var(--awc-card-padding, 16px)) * 2); box-sizing: border-box;
             }
             #temp-text {
-                z-index: 10; font-size: var(--awc-top-font-size, clamp(24px, 11cqw, 52px)); font-weight: var(--awc-top-font-weight, 600); line-height: 1; letter-spacing: -1px; display: flex; align-items: flex-start; gap: 6px; white-space: nowrap; padding: var(--awc-top-padding, 0);
+                z-index: 10; font-size: var(--awc-top-font-size, clamp(24px, 11cqw, 52px)); font-weight: var(--awc-top-font-weight, 600); line-height: 1; display: flex; align-items: flex-start; gap: 6px; white-space: nowrap; padding: var(--awc-top-padding, 0);
                 &.behind { z-index: -1; }
                 &.with-bg { --_bg: var(--awc-top-bg-color, var(--_text-bg)); padding: var(--awc-top-padding, 8px 14px); border-radius: var(--awc-top-bg-radius, calc(var(--awc-card-border-radius, var(--ha-card-border-radius, 12px)) - 5px)); width: fit-content; align-items: flex-start; text-shadow: none !important; &.frosted { backdrop-filter: var(--awc-top-bg-filter, blur(10px)); -webkit-backdrop-filter: var(--awc-top-bg-filter, blur(10px)); } }
             }
@@ -1646,6 +1777,11 @@ class AtmosphericWeatherCard extends HTMLElement {
             #temp-text { text-shadow: var(--awc-text-shadow-active); }
             .temp-val { overflow: visible; text-overflow: ellipsis; min-width: 0; }
             .temp-unit { font-size: 0.5em; font-weight: 500; padding-top: 6px; opacity: 0.7; flex-shrink: 0; }
+            .chip-val-low { display: block; font-size: 0.78em; opacity: 0.65; font-weight: 500; line-height: 1.2; white-space: nowrap; }
+            .chip.has-val-low:not(:is(.format-stacked, .format-vertical)) { align-items: flex-start; }
+            .chip.has-val-low:not(:is(.format-stacked, .format-vertical)) .chip-icon { align-self: center; }
+            .chip.has-val-low:not(:is(.format-stacked, .format-vertical)) .chip-val { display: flex; flex-direction: column; }
+            .chip.has-val-low:is(.format-stacked, .format-vertical) .chip-val { white-space: normal; overflow: visible; }
             #chips-group {
                 pointer-events: auto; width: var(--awc-row-width, auto); box-sizing: border-box; padding: var(--awc-container-padding, 0); max-height: calc(100% - var(--_awc-pad-v, var(--awc-card-padding, 16px)) * 2);
                 &:has(.row-wrap) {
@@ -1658,11 +1794,10 @@ class AtmosphericWeatherCard extends HTMLElement {
                 }
                 &:has(.row-horizontal-scroll) { height: var(--awc-row-height, auto); }
                 &:has(.row-vertical-scroll) { height: var(--awc-row-height, calc(100% - var(--_awc-pad-v, var(--awc-card-padding, 16px)) * 2)); }
-                &:has(.ind-v.active) { flex-direction: row; }
                 &.grouped {
                     border-radius: var(--awc-bottom-bg-radius, calc(var(--awc-card-border-radius, var(--ha-card-border-radius, 12px)) - 5px));
                     &.with-bg {
-                        --_bg: var(--awc-bottom-bg-color, var(--_text-bg));
+                        --_bg: var(--awc-container-bg-color, var(--awc-bottom-bg-color, var(--_text-bg)));
                         &.contrast { background: var(--_bg); box-shadow: var(--awc-bg-shadow, var(--_contrast-shadow)); }
                         &.frosted { background: var(--_bg); border: var(--awc-bg-border, 1px solid var(--_text-bg-border)); box-shadow: var(--awc-bg-shadow, var(--_frosted-inset, none)); backdrop-filter: var(--awc-bottom-bg-filter, blur(10px)); -webkit-backdrop-filter: var(--awc-bottom-bg-filter, blur(10px)); }
                         &.theme { background: var(--ha-card-background, var(--card-background-color, var(--primary-background-color))); border: var(--ha-card-border-width, 1px) solid var(--ha-card-border-color, var(--divider-color)); box-shadow: var(--ha-card-box-shadow, none); }
@@ -1674,7 +1809,10 @@ class AtmosphericWeatherCard extends HTMLElement {
                 }
             }
             #chips-row {
-                font-size: var(--awc-bottom-font-size, clamp(15px, 5cqmin, 26px)); font-weight: var(--awc-bottom-font-weight, 500); letter-spacing: 0.5px; display: flex; align-items: center; gap: var(--awc-bottom-gap, 8px); width: 100%; box-sizing: border-box; pointer-events: auto; border-radius: inherit;
+                font-size: var(--awc-bottom-font-size, clamp(15px, 5cqmin, 26px)); font-weight: var(--awc-bottom-font-weight, 500); display: flex; align-items: center; gap: var(--awc-bottom-gap, 8px); width: 100%; box-sizing: border-box; pointer-events: auto; border-radius: inherit;
+                &.has-separator > .chip { position: relative; overflow: visible; }
+                &.has-separator > .chip + .chip::before { content: ""; position: absolute; pointer-events: none; top: 0; bottom: 0; inset-inline-start: calc((var(--awc-bottom-gap, 8px) / -2) - (var(--awc-separator-width, 2px) / 2)); width: var(--awc-separator-width, 2px); background: var(--awc-separator-color, color-mix(in srgb, currentColor 10%, transparent)); }
+                &.has-separator.row-vertical-scroll > .chip + .chip::before { top: calc((var(--awc-bottom-gap, 8px) / -2) - (var(--awc-separator-width, 2px) / 2)); bottom: auto; left: 0; right: 0; inset-inline-start: 0; width: auto; height: var(--awc-separator-width, 2px); }
                 &.row-wrap { flex-wrap: wrap; }
                 &.row-horizontal-scroll {
                     flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; height: 100%; scroll-snap-type: x proximity; scrollbar-width: none; -ms-overflow-style: none; pointer-events: auto;
@@ -1691,7 +1829,7 @@ class AtmosphericWeatherCard extends HTMLElement {
                     &[class*="right"] { align-items: flex-end; }
                     &.pos-top-center, &.pos-center, &.pos-bottom-center { align-items: center; }
                 }
-                &.row-grid { display: grid; grid-template-columns: repeat(var(--awc-row-columns, 1), minmax(0, 1fr)); align-items: stretch; row-gap: var(--awc-bottom-gap, 8px); column-gap: 0; }
+                &.row-grid { display: grid; grid-template-columns: repeat(var(--awc-row-columns, 1), minmax(0, 1fr)); align-items: stretch; row-gap: var(--awc-bottom-gap, 8px); column-gap: var(--awc-bottom-gap, 8px); }
                 &.row-wrap[class*="right"] { justify-content: flex-end; }
                 &.row-wrap.pos-top-center, &.row-wrap.pos-center, &.row-wrap.pos-bottom-center { justify-content: center; }
                 &:is(.row-grid, .full-width, .has-visible-count) { align-items: stretch; }
@@ -1710,7 +1848,7 @@ class AtmosphericWeatherCard extends HTMLElement {
                     & .chip:is(.format-stacked, .format-vertical):not(:has(.chip-icon)) .chip-val { justify-self: center; text-align: center; }
                 }
                 &.align-end {
-                    & .chip:not(:is(.format-stacked, .format-vertical)) { flex-direction: row-reverse; & .chip-icon { margin-right: 0; margin-left: var(--awc-chip-gap, 6px); } & .chip-name { margin-right: 0; margin-left: 0.35em; } }
+                    & .chip:not(:is(.format-stacked, .format-vertical)) { flex-direction: row-reverse; & .chip-icon { margin-right: 0; margin-left: var(--awc-chip-gap, 6px); } & .chip-name { margin-right: 0; margin-left: var(--awc-chip-text-gap, 0.35em); } }
                     & .chip.format-stacked { grid-template: "name icon" auto "value icon" auto / minmax(0, auto) auto; justify-content: end; }
                     & .chip.format-vertical { justify-items: end; text-align: end; }
                     & .chip:is(.format-stacked, .format-vertical).with-bg { padding: var(--awc-chips-padding, 6px 6px 6px 10px); }
@@ -1735,7 +1873,7 @@ class AtmosphericWeatherCard extends HTMLElement {
                 &:not(.with-bg) { & .chip-name { opacity: var(--awc-bottom-opacity, 0.7); } }
                 &.has-icon-bg.frosted:not(.with-bg) { & .chip-name { opacity: var(--awc-bottom-opacity, 0.7); } }
                 & .chip-icon { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; margin-right: var(--awc-chip-gap, 6px); & :is(ha-icon, ha-state-icon) { --mdc-icon-size: var(--awc-icon-size, 1.1em); opacity: 0.9; } & img.custom-bottom-icon { display: block; height: var(--awc-icon-size, 1.1em); width: var(--awc-icon-size, 1.1em); object-fit: contain; } }
-                & .chip-name { font-size: var(--awc-chip-name-font-size, inherit); font-weight: var(--awc-chip-name-weight, 500); opacity: var(--awc-chip-name-opacity, 0.7); color: var(--awc-chip-name-color, inherit); flex: 0 0 auto; margin-right: 0.35em; }
+                & .chip-name { font-size: var(--awc-chip-name-font-size, inherit); font-weight: var(--awc-chip-name-weight, 500); opacity: var(--awc-chip-name-opacity, 0.7); color: var(--awc-chip-name-color, inherit); flex: 0 0 auto; margin-right: var(--awc-chip-text-gap, 0.35em); }
                 & .chip-val { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; display: inline-block; font-weight: var(--awc-chip-value-weight, 700); }
                 &:not(:has(.chip-name)):not(:is(.format-stacked, .format-vertical)) .chip-val { font-weight: var(--awc-chip-value-weight, 500); }
                 & .chip-val, & .chip-name { text-shadow: var(--_chip-no-bg-shadow, 0 1px 2px rgba(0, 0, 0, 0.35)); }
@@ -1752,32 +1890,35 @@ class AtmosphericWeatherCard extends HTMLElement {
                 &:is(.format-stacked, .format-vertical) {
                     display: grid; align-items: center;
                     & .chip-icon { grid-area: icon; margin: 0; aspect-ratio: 1; overflow: visible; border-radius: var(--awc-stacked-icon-radius, calc(var(--awc-bottom-bg-radius, calc(var(--awc-card-border-radius, var(--ha-card-border-radius, 12px)) - 5px)) - var(--awc-stacked-icon-inset, 3px))); padding: var(--awc-icon-padding, 4px); & :is(ha-icon, ha-state-icon) { --mdc-icon-size: var(--awc-icon-size, 1.3em); opacity: 1; } & img.custom-bottom-icon { height: var(--awc-icon-size, 1.3em); width: var(--awc-icon-size, 1.3em); } }
-                    & .chip-name { grid-area: name; max-width: 100%; font-size: var(--awc-chip-name-font-size, var(--awc-stacked-name-size, 0.85em)); font-weight: var(--awc-chip-name-weight, 500); letter-spacing: var(--awc-stacked-name-tracking, 0.03em); opacity: var(--awc-stacked-name-opacity, 0.6); color: var(--awc-stacked-name-color, inherit); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; &:empty { display: none; } &:empty + .chip-val { grid-row: 1 / -1; align-self: center; } }
+                    & .chip-name { grid-area: name; max-width: 100%; font-size: var(--awc-chip-name-font-size, var(--awc-stacked-name-size, 0.85em)); font-weight: var(--awc-chip-name-weight, 500); opacity: var(--awc-stacked-name-opacity, 0.6); color: var(--awc-stacked-name-color, inherit); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; &:empty { display: none; } &:empty + .chip-val { grid-row: 1 / -1; align-self: center; } }
                     &:has(.chip-name:empty) .chip-icon { background: none; border: none; box-shadow: none; aspect-ratio: unset; align-self: center; }
                     & .chip-val { grid-area: value; font-weight: var(--awc-stacked-value-weight, 700); min-width: 0; max-width: 100%; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
                 }
                 &.format-stacked {
                     grid-template: "icon name" auto "icon value" auto / auto 1fr;
-                    column-gap: var(--awc-stacked-column-gap, var(--awc-chip-gap, 10px)); row-gap: var(--awc-stacked-row-gap, 4px);
+                    column-gap: var(--awc-stacked-column-gap, var(--awc-chip-gap, 10px)); row-gap: var(--awc-stacked-row-gap, var(--awc-chip-text-gap, 4px));
                     & .chip-icon { align-self: stretch; }
                     & .chip-name { align-self: end; } & .chip-val { align-self: start; }
                     &:not(:has(.chip-icon)) { grid-template: "name" auto "value" auto / 1fr; column-gap: 0; }
                     &.with-bg { padding: var(--awc-chips-padding, 6px 10px 6px 6px); }
                 }
                 &.format-vertical {
-                    grid-template: "icon" auto "name" auto "value" auto / 1fr; row-gap: var(--awc-stacked-row-gap, 4px); justify-items: center; text-align: center;
+                    grid-template: "icon" auto "name" auto "value" auto / 1fr; row-gap: 0; justify-items: center; text-align: center;
                     & .chip-name:empty + .chip-val { grid-row: value; align-self: center; }
                     & .chip-icon { align-self: center; justify-self: center; margin: 0 0 var(--awc-vertical-icon-gap, var(--awc-chip-gap, 6px)) 0; & :is(ha-icon, ha-state-icon) { --mdc-icon-size: var(--awc-icon-size, 1.6em); } & img.custom-bottom-icon { height: var(--awc-icon-size, 1.6em); width: var(--awc-icon-size, 1.6em); } }
-                    & .chip-name { align-self: auto; margin: 0; } & .chip-val { align-self: auto; }
+                    & .chip-name { align-self: auto; margin: 0 0 var(--awc-chip-text-gap, 4px) 0; } & .chip-val { align-self: auto; }
                     &.with-bg { padding: var(--awc-chips-padding, 6px 10px); }
                     &:not(.has-icon-bg) .chip-icon { background: none; border: none; box-shadow: none; aspect-ratio: unset; border-radius: 0; overflow: visible; padding: var(--awc-icon-padding, 0); }
                 }
                 &.no-icon-bg .chip-icon { background: none !important; border: none !important; box-shadow: none !important; aspect-ratio: unset !important; border-radius: 0 !important; overflow: visible !important; padding: 0 !important; }
-                &.align-center:not(:is(.format-stacked, .format-vertical)) { justify-content: center; }
-                &.align-end:not(:is(.format-stacked, .format-vertical)) { flex-direction: row-reverse; & .chip-icon { margin-right: 0; margin-left: var(--awc-chip-gap, 6px); } & .chip-name { margin-right: 0; margin-left: 0.35em; } }
+                &.align-center:not(:is(.format-stacked, .format-vertical)) { justify-content: center; & .chip-val { flex: 0 0 auto; text-align: center; } }
+                &.align-end:not(:is(.format-stacked, .format-vertical)) { flex-direction: row-reverse; & .chip-icon { margin-right: 0; margin-left: var(--awc-chip-gap, 6px); } & .chip-name { margin-right: 0; margin-left: var(--awc-chip-text-gap, 0.35em); } & .chip-val { flex: 0 0 auto; } }
+                &.overflow-marquee:not(.marquee-label) { &.align-center .chip-val, &.align-end .chip-val { flex: 1 1 auto; min-width: 0; } }
                 &.align-spread:not(:is(.format-stacked, .format-vertical)) { & .chip-val { margin-left: auto; } }
+                &.align-start.format-stacked { & .chip-name, & .chip-val { justify-self: start; text-align: start; } }
                 &.align-center.format-stacked { grid-template-columns: auto minmax(0, auto); justify-content: center; & .chip-name, & .chip-val { align-self: auto; justify-self: start; text-align: start; } }
                 &.align-end.format-stacked { grid-template: "name icon" auto "value icon" auto / minmax(0, auto) auto; justify-content: end; & .chip-name, & .chip-val { justify-self: end; text-align: end; } &.with-bg { padding: var(--awc-chips-padding, 6px 6px 6px 10px); } }
+                &.align-start.format-vertical { justify-items: start; text-align: start; }
                 &.align-center.format-vertical { justify-items: center; text-align: center; }
                 &.align-end.format-vertical { justify-items: end; text-align: end; }
                 &.has-icon-bg .chip-icon { aspect-ratio: 1; overflow: visible; border-radius: var(--awc-stacked-icon-radius, calc(var(--awc-bottom-bg-radius, calc(var(--awc-card-border-radius, var(--ha-card-border-radius, 12px)) - 5px)) - var(--awc-stacked-icon-inset, 3px))); padding: var(--awc-icon-padding, 4px); }
@@ -1787,12 +1928,12 @@ class AtmosphericWeatherCard extends HTMLElement {
                 &.has-icon-bg:not(.with-bg).frosted .chip-icon { backdrop-filter: var(--awc-bottom-bg-filter, blur(10px)); -webkit-backdrop-filter: var(--awc-bottom-bg-filter, blur(10px)); }
                 &.has-icon-bg:not(.with-bg).contrast .chip-icon { box-shadow: var(--awc-icon-bg-shadow, var(--_contrast-shadow, none)); border: none; }
                 &.has-icon-bg:not(.with-bg).theme .chip-icon { background: var(--ha-card-background, var(--card-background-color, var(--primary-background-color))); border: var(--ha-card-border-width, 1px) solid var(--ha-card-border-color, var(--divider-color)); box-shadow: var(--ha-card-box-shadow, none); }
-                &.has-icon-bg.with-bg .chip-icon { background: var(--awc-stacked-icon-bg, var(--ha-card-background, var(--card-background-color, var(--primary-background-color)))); border: none; box-shadow: var(--awc-icon-bg-shadow, 0 2px 6px rgba(0,0,0,0.18), 0 1px 2px rgba(0,0,0,0.12)); }
+                &.has-icon-bg.with-bg .chip-icon { background: var(--awc-stacked-icon-bg, color-mix(in srgb, var(--ha-card-background, var(--card-background-color, var(--primary-background-color))) 20%, transparent)); border: none; box-shadow: var(--awc-icon-bg-shadow, 0 2px 6px rgba(0,0,0,0.18), 0 1px 2px rgba(0,0,0,0.12)); }
                 &.has-icon-bg.with-bg.frosted .chip-icon { border: var(--_stacked-icon-border, none); }
                 &.has-icon-bg.with-bg.contrast .chip-icon { box-shadow: var(--awc-icon-bg-shadow, var(--_stacked-icon-shadow, 0 2px 6px rgba(0,0,0,0.18), 0 1px 2px rgba(0,0,0,0.12))); }
                 &.has-icon-bg.with-bg.theme .chip-icon { border: var(--ha-card-border-width, 1px) solid var(--ha-card-border-color, var(--divider-color)); }
             }
-            .chip-free { position: absolute; pointer-events: auto; z-index: 5; font-family: var(--ha-font-family, var(--paper-font-body1_-_font-family, sans-serif)); font-size: var(--awc-bottom-font-size, clamp(15px, 5cqmin, 26px)); font-weight: var(--awc-bottom-font-weight, 500); letter-spacing: 0.5px; }
+            .chip-free { position: absolute; pointer-events: auto; z-index: 5; font-family: var(--ha-font-family, var(--paper-font-body1_-_font-family, sans-serif)); font-size: var(--awc-bottom-font-size, clamp(15px, 5cqmin, 26px)); font-weight: var(--awc-bottom-font-weight, 500); max-width: calc(100% - var(--_awc-pad-h, var(--awc-card-padding, 16px)) * 2); box-sizing: border-box; }
             .chip.chip-loading { position: relative; & .chip-icon, & .chip-name, & .chip-val { visibility: hidden; } }
             .chip-loader { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 5px; pointer-events: none; }
             .chip-loader span { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.2; animation: awc-dot-pulse 1.2s ease-in-out infinite; }
@@ -1802,7 +1943,15 @@ class AtmosphericWeatherCard extends HTMLElement {
                 0%, 60%, 100% { opacity: 0.2; transform: scale(0.85); }
                 30%           { opacity: 0.7; transform: scale(1); }
             }
-            .chip .chip-val.awc-marquee-host { overflow: hidden; text-overflow: clip; contain: layout style; -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--awc-marquee-fade, 12px), #000 calc(100% - var(--awc-marquee-fade, 12px)), transparent 100%); mask-image: linear-gradient(to right, transparent 0, #000 var(--awc-marquee-fade, 12px), #000 calc(100% - var(--awc-marquee-fade, 12px)), transparent 100%); }
+            .chip .chip-val.awc-marquee-host { overflow: hidden; text-overflow: clip; contain: layout style; }
+            .chip .chip-name.awc-marquee-host { overflow: hidden; text-overflow: clip; contain: layout style; margin-right: var(--awc-chip-text-gap, 0.35em); }
+            .chip.marquee-value .chip-name { flex: 0 0 auto; }
+            .chip.marquee-label .chip-name { flex: 1 1 auto; min-width: 0; }
+            .chip.marquee-label .chip-val { flex: 0 0 auto; }
+            .chip.marquee-both .chip-name { flex: 1 1 auto; min-width: 0; }
+            .chip.marquee-both .chip-val { flex: 1 1 auto; min-width: 0; }
+            .chip .chip-val.awc-marquee-host.is-animating { -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--awc-marquee-fade, 12px), #000 calc(100% - var(--awc-marquee-fade, 12px)), transparent 100%); mask-image: linear-gradient(to right, transparent 0, #000 var(--awc-marquee-fade, 12px), #000 calc(100% - var(--awc-marquee-fade, 12px)), transparent 100%); }
+            .chip .chip-name.awc-marquee-host.is-animating { -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--awc-marquee-fade, 12px), #000 calc(100% - var(--awc-marquee-fade, 12px)), transparent 100%); mask-image: linear-gradient(to right, transparent 0, #000 var(--awc-marquee-fade, 12px), #000 calc(100% - var(--awc-marquee-fade, 12px)), transparent 100%); }
             .awc-marquee-track { display: inline-block; white-space: nowrap; }
             .awc-marquee-text { display: inline; }
             .awc-marquee-sep { display: inline-block; padding: 0 var(--awc-marquee-sep-gap, 0.4em); opacity: 0.5; &::before { content: var(--awc-marquee-separator, "•"); } }
@@ -1826,7 +1975,7 @@ class AtmosphericWeatherCard extends HTMLElement {
     _initDOM() {
         if (this._initialized) return;
         this._initialized = true;
-        if (this._config.offset) this.style.margin = this._config.offset;
+        if (this._config.card_offset) this.style.margin = this._config.card_offset;
         const style = document.createElement('style');
         style.textContent = AtmosphericWeatherCard._buildStyles();
         const root = document.createElement('div');
@@ -1898,7 +2047,7 @@ class AtmosphericWeatherCard extends HTMLElement {
             const forcedLight = !this._isThemeDark;
             // Colored moon_style drives the glow tint in both modes. Unset or
             // unknown values fall back to the original per-theme defaults.
-            const rawStyle = (this._config.moon_style || '').toLowerCase();
+            const rawStyle = (this._config.celestial_moon_style || '').toLowerCase();
             const coloredRgbMap = { yellow: '255,200,50', blue: '100,125,175', purple: '140,115,175', grey: '105,110,120' };
             let moonRgb;
             if (coloredRgbMap[rawStyle]) {
@@ -1941,16 +2090,16 @@ class AtmosphericWeatherCard extends HTMLElement {
     _applyConfigStyles() {
         if (!this._elements?.tempText || !this._elements?.chipsRow) return;
         const cfg = this._config;
-        const showText = cfg.disable_text !== true;
-        const showTop = cfg.disable_top_text !== true;
-        const showBottom = cfg.disable_chips !== true;
-        const showBottomBg = cfg.chips_background === true;
+        const showText = cfg.card_hide_text !== true;
+        const showTop = cfg.top_text_hide !== true;
+        const showBottom = cfg.chip_area_hide !== true;
+        const showBottomBg = cfg.chip_area_background === true;
         const showTopBg = cfg.top_text_background === true;
-        const bgStyle = ['contrast', 'frosted', 'theme'].includes((cfg.background_style || '').toLowerCase()) ? cfg.background_style.toLowerCase() : 'frosted';
+        const bgStyle = ['contrast', 'frosted', 'theme'].includes((cfg.card_background_style || '').toLowerCase()) ? cfg.card_background_style.toLowerCase() : 'frosted';
         const root = this._elements.root;
-        this._cssVar(root, '--awc-top-font-size', cfg.top_font_size || '', '_prevTopFS');
-        this._cssVar(root, '--awc-bottom-font-size', cfg.chips_font_size || '', '_prevBottomFS');
-        this._cssVar(root, '--awc-chip-name-font-size', cfg.chips_name_font_size || '', '_prevChipNameFS');
+        this._cssVar(root, '--awc-top-font-size', cfg.top_text_size || '', '_prevTopFS');
+        this._cssVar(root, '--awc-bottom-font-size', cfg.chip_text_size || '', '_prevBottomFS');
+        this._cssVar(root, '--awc-chip-name-font-size', cfg.chip_label_size || '', '_prevChipNameFS');
         this._cssVar(root, '--awc-card-padding', cfg.card_padding || '', '_prevCardPadding');
         const padRaw = (cfg.card_padding || '').toString().trim();
         if (padRaw && this._prevCardPadParsed !== padRaw) {
@@ -1963,7 +2112,7 @@ class AtmosphericWeatherCard extends HTMLElement {
             root.style.removeProperty('--_awc-pad-v');
             root.style.removeProperty('--_awc-pad-h');
         }
-        const behind = cfg.top_text_behind_weather === true;
+        const behind = cfg.top_text_behind === true;
         const showBg = showTopBg && !behind;
         const configSig = `${showText}|${showTop}|${showBottom}|${behind}|${showTopBg}|${showBg}|${bgStyle}`;
         if (this._prevConfigSig !== configSig) {
@@ -1978,35 +2127,36 @@ class AtmosphericWeatherCard extends HTMLElement {
             for (const s of ['contrast', 'frosted', 'theme']) tt.classList.toggle(s, showBg && bgStyle === s);
         }
         for (const [prop, key, cache] of [
-            ['--awc-row-width', 'chips_width', '_prevRowWidth'],
-            ['--awc-row-height', 'chips_height', '_prevRowHeight'],
-            ['--awc-chips-padding', 'chips_padding', '_prevChipPad'],
-            ['--awc-container-padding', 'chips_container_padding', '_prevContainerPad'],
+            ['--awc-row-width', 'chip_area_width', '_prevRowWidth'],
+            ['--awc-row-height', 'chip_area_height', '_prevRowHeight'],
+            ['--awc-chips-padding', 'chip_padding', '_prevChipPad'],
+            ['--awc-container-padding', 'chip_area_padding', '_prevContainerPad'],
+            ['--awc-container-bg-color', 'chip_area_background_color', '_prevContainerBgColor'],
             ['--awc-top-padding', 'top_text_padding', '_prevTopPad'],
-            ['--awc-bottom-gap', 'chip_gap', '_prevChipsGap'],
-            ['--awc-chip-gap', 'chip_inner_gap', '_prevChipGap'],
-            ['--awc-icon-size', 'chip_icon_width', '_prevChipIconWidth'],
+            ['--awc-bottom-gap', 'chip_area_gap', '_prevChipsGap'],
+            ['--awc-chip-gap', 'chip_gap', '_prevChipGap'],
+            ['--awc-chip-text-gap', 'chip_text_gap', '_prevChipTextGap'],
+            ['--awc-icon-size', 'chip_icon_size', '_prevChipIconWidth'],
             ['--awc-icon-padding', 'chip_icon_padding', '_prevChipIconPad'],
         ]) this._cssVar(root, prop, (cfg[key] || '').toString().trim(), cache);
-        const cols = parseInt(cfg.chips_columns, 10);
+        const cols = parseInt(cfg.chip_area_columns, 10);
         this._cssVar(root, '--awc-row-columns', Number.isFinite(cols) && cols > 0 ? String(cols) : '', '_prevRowCols');
-        let rowLayout = (cfg.chips_layout || 'wrap').toString().toLowerCase();
-        if (rowLayout === 'scroll') rowLayout = 'horizontal-scroll';
-        const isGrouped = cfg.chips_grouped === true;
+        let rowLayout = (cfg.chip_area_layout || 'wrap').toString().toLowerCase();
+        const isGrouped = cfg.chip_area_grouped === true;
         const bt = this._elements.chipsRow;
         const cg = this._elements.chipsGroup;
         if (this._prevRowOverflow !== rowLayout) {
             this._prevRowOverflow = rowLayout;
             for (const m of ['horizontal-scroll', 'wrap', 'grid', 'vertical-scroll']) bt.classList.toggle('row-' + m, rowLayout === m);
         }
-        const visCount = parseInt(cfg.chips_visible, 10);
+        const visCount = parseInt(cfg.chip_area_scroll_count, 10);
         const hasVis = Number.isFinite(visCount) && visCount > 0;
         const visKey = `${hasVis}|${visCount}|${rowLayout}`;
         if (this._prevVisKey !== visKey) {
             this._prevVisKey = visKey;
             bt.classList.toggle('has-visible-count', hasVis);
             if (hasVis) {
-                const gapVal = (cfg.chip_gap || '8px').toString().trim() || '8px';
+                const gapVal = (cfg.chip_area_gap || '8px').toString().trim() || '8px';
                 bt.style.setProperty('--awc-chip-basis', `calc((100% - ${visCount - 1} * ${gapVal}) / ${visCount})`);
                 if (rowLayout === 'vertical-scroll') {
                     bt.style.setProperty('--awc-chip-basis-v', `calc((100% - ${visCount - 1} * ${gapVal}) / ${visCount})`);
@@ -2023,7 +2173,7 @@ class AtmosphericWeatherCard extends HTMLElement {
                 bt.style.removeProperty('--awc-row-max-height');
             }
         }
-        const hasSeparator = isGrouped && showBottomBg && cfg.chips_separator === true;
+        const hasSeparator = cfg.chip_area_separator === true;
         const groupedKey = `${isGrouped}|${showBottomBg}|${bgStyle}|${hasSeparator}`;
         if (this._prevGrouped !== groupedKey) {
             this._prevGrouped = groupedKey;
@@ -2036,12 +2186,12 @@ class AtmosphericWeatherCard extends HTMLElement {
                 cg.classList.remove('with-bg', 'contrast', 'frosted', 'theme');
             }
         }
-        const fullWidth = cfg.chips_full_width === true;
+        const fullWidth = cfg.chip_area_full_width === true;
         if (this._prevFullWidth !== fullWidth) {
             this._prevFullWidth = fullWidth;
             bt.classList.toggle('full-width', fullWidth);
         }
-        const align = (cfg.chips_align || 'start').toString().toLowerCase();
+        const align = (cfg.chip_area_align || 'start').toString().toLowerCase();
         if (this._prevChipAlign !== align) {
             this._prevChipAlign = align;
             for (const a of ['start', 'center', 'end', 'spread']) bt.classList.toggle(`align-${a}`, align === a);
@@ -2052,19 +2202,18 @@ class AtmosphericWeatherCard extends HTMLElement {
         if (!this._elements?.tempText || !this._elements?.chipsRow) return;
         this._applyConfigStyles();
         const cfg = this._config;
-        const showBottomBg = cfg.chips_background === true;
-        const bgStyle = ['contrast', 'frosted', 'theme'].includes((cfg.background_style || '').toLowerCase()) ? cfg.background_style.toLowerCase() : 'frosted';
-        const chipFormatRaw = (cfg.chip_format || 'inline').toLowerCase();
+        const showBottomBg = cfg.chip_area_background === true;
+        const bgStyle = ['contrast', 'frosted', 'theme'].includes((cfg.card_background_style || '').toLowerCase()) ? cfg.card_background_style.toLowerCase() : 'frosted';
+        const chipFormatRaw = (cfg.chip_style || 'inline').toLowerCase();
         const chipFormat = chipFormatRaw === 'stacked' ? 'stacked' : chipFormatRaw === 'vertical' ? 'vertical' : 'inline';
-        let rowLayout = (cfg.chips_layout || 'wrap').toString().toLowerCase();
-        if (rowLayout === 'scroll') rowLayout = 'horizontal-scroll';
-        const visCount = parseInt(cfg.chips_visible, 10);
+        let rowLayout = (cfg.chip_area_layout || 'wrap').toString().toLowerCase();
+        const visCount = parseInt(cfg.chip_area_scroll_count, 10);
         const hasVis = Number.isFinite(visCount) && visCount > 0;
         const bt = this._elements.chipsRow;
         let topVal, topUnit;
-        const hasCustomTop = !!this._config.top_text_sensor;
+        const hasCustomTop = !!this._config.top_text_entity;
         if (hasCustomTop) {
-            const s = hass.states[this._config.top_text_sensor];
+            const s = hass.states[this._config.top_text_entity];
             if (s) {
                 const raw = s.state;
                 const isTextState = !raw || isNaN(parseFloat(raw)) || !isFinite(raw);
@@ -2084,7 +2233,7 @@ class AtmosphericWeatherCard extends HTMLElement {
             this._numFmt = new Intl.NumberFormat(lang, { maximumFractionDigits: 1, minimumFractionDigits: 0 });
         }
         if (isTopNumeric) fmtTop = this._numFmt.format(topVal);
-        if (cfg.top_unit_format !== undefined) topUnit = cfg.top_unit_format;
+        if (cfg.top_text_unit !== undefined) topUnit = cfg.top_text_unit;
         if (this._lastTempVal !== fmtTop) {
             this._lastTempVal = fmtTop;
             this._elements.tempVal.textContent = fmtTop;
@@ -2103,7 +2252,6 @@ class AtmosphericWeatherCard extends HTMLElement {
         if (rowRebuilt) {
             this._lastLocStr = rowSig;
             bt.innerHTML = rowChips.map(r => r.html).join('');
-            this._refreshMarqueeObservation();
             if (!hasVis && rowLayout === 'vertical-scroll') { requestAnimationFrame(() => this._computeVerticalVisHeight()); }
             this._nativeIconCache = null;
         }
@@ -2138,9 +2286,9 @@ class AtmosphericWeatherCard extends HTMLElement {
             }
             this._nativeIconCache = null;
         }
-        // Native icon elements need hass + stateObj set on every update so HA
-        // can re-render them. Cache the DOM lookups — only re-query when the
-        // chip DOM was actually rebuilt above.
+        if (rowRebuilt || freeRebuilt) {
+            this._refreshMarqueeObservation();
+        }
         const hasNativeIcons = rendered.some(r => r.showIcon && r.iconStrategy === 'native');
         if (hasNativeIcons) {
             if (!this._nativeIconCache || rowRebuilt || freeRebuilt) {
@@ -2198,18 +2346,17 @@ class AtmosphericWeatherCard extends HTMLElement {
                     if (hClass) ccw.classList.add(hClass);
                     ccw.classList.add(vClass);
                 } else {
-                                ccw.classList.add('cc-align-bottom');
+                    ccw.classList.add('cc-align-bottom');
                     const chipsIsLeft = positions.chips.includes('left');
                     const chipsIsRight = positions.chips.includes('right');
                     ccw.classList.add(chipsIsLeft ? 'cc-text-right' : chipsIsRight ? 'cc-text-left' : 'cc-text-hcenter');
                 }
             }
         }
-        this._updateScrollDots(rowLayout, rowChips.length);
     }
     _renderChip(chip, idx, hass, weatherState, lang, rowBg, bgStyle, chipFormat) {
         if (!chip.entity) return { html: '', sig: `skip-${idx}`, sensorObj: null, iconStrategy: 'static', showIcon: false, isFree: false, posAnchor: '', posX: '0', posY: '0' };
-        const showIcon = chip.disable_icon !== true;
+        const showIcon = chip.hide_icon !== true;
         const isEnhanced = chipFormat === 'stacked' || chipFormat === 'vertical';
         let sensorObj = null, iconStrategy = 'static', iconValue = 'mdi:information-outline', formatted, unit;
         const isForecast = !!chip.forecast;
@@ -2220,9 +2367,15 @@ class AtmosphericWeatherCard extends HTMLElement {
             fcLoading = !!fc.loading;
             iconValue = fcCondition ? (WEATHER_ICONS[fcCondition] || WEATHER_ICONS['default']) : iconValue;
             if (chip.attribute && chip.attribute !== 'condition') iconValue = FORECAST_ATTR_ICONS[chip.attribute] || iconValue;
+            if (fc.templow !== undefined) { var _fcTemplow = fc.templow; }
         } else {
             const resolved = this._resolveSensorValue(hass, chip.entity, chip.attribute);
             formatted = resolved.formatted; unit = resolved.unit;
+            if (resolved.haFormatted && chip.unit_format !== undefined && resolved.rawNumeric != null) {
+                const rawVal = resolved.rawNumeric;
+                const isNum = rawVal !== '' && !isNaN(parseFloat(rawVal)) && isFinite(rawVal);
+                if (isNum) formatted = this._numFmt ? this._numFmt.format(rawVal) : String(rawVal);
+            }
             const sensor = hass.states[chip.entity];
             if (sensor) { if (chip.attribute) iconValue = WEATHER_ATTR_ICONS[chip.attribute] || 'mdi:information-outline'; else { sensorObj = sensor; iconStrategy = 'native'; } }
         }
@@ -2243,7 +2396,10 @@ class AtmosphericWeatherCard extends HTMLElement {
         const hasUnitFormat = chip.unit_format !== undefined;
         if (hasUnitFormat) unit = chip.unit_format;
         const overflowMode = (chip.overflow || 'ellipsis').toString().toLowerCase().trim();
-        const isMarquee = overflowMode === 'marquee';
+        const labelOverflow = (chip.label_overflow || 'ellipsis').toString().toLowerCase().trim();
+        const isValueMarquee = overflowMode === 'marquee';
+        const isLabelMarquee = labelOverflow === 'marquee';
+        const hasAnyMarquee = isValueMarquee || isLabelMarquee;
         const marqueeSpeed = Math.max(5, parseFloat(chip.marquee_speed) || 30);
         const marqueeRtl = chip.marquee_rtl === true;
         const width = (chip.width || '').toString().trim();
@@ -2271,45 +2427,62 @@ class AtmosphericWeatherCard extends HTMLElement {
             }
             iconHtml = `<span class="chip-icon">${inner}</span>`;
         }
-        const nameHtml = (name || isEnhanced) ? `<span class="chip-name">${name}</span>` : '';
+        const nameHtml = (name || isEnhanced)
+            ? (isLabelMarquee
+                ? `<span class="chip-name awc-marquee-host" data-speed="${marqueeSpeed}" data-rtl="${marqueeRtl ? 1 : 0}"><span class="awc-marquee-track"><span class="awc-marquee-text">${name}</span></span></span>`
+                : `<span class="chip-name">${name}</span>`)
+            : '';
         const inner = hasUnitFormat ? `${formatted}${unit}` : (unit ? `${formatted} ${unit}` : `${formatted}`);
-        const valHtml = isMarquee
+        const lowInner = (_fcTemplow !== undefined) ? (hasUnitFormat ? `${_fcTemplow}${unit}` : (unit ? `${_fcTemplow} ${unit}` : `${_fcTemplow}`)) : '';
+        const lowBelowHtml = lowInner ? `<span class="chip-val-low">${lowInner}</span>` : '';
+        const valHtml = isValueMarquee
             ? `<span class="chip-val awc-marquee-host" data-speed="${marqueeSpeed}" data-rtl="${marqueeRtl ? 1 : 0}"><span class="awc-marquee-track"><span class="awc-marquee-text">${inner}</span></span></span>`
-            : `<span class="chip-val">${inner}</span>`;
+            : `<span class="chip-val">${inner}${lowBelowHtml}</span>`;
         const isFree = (chip.position || '').toString().toLowerCase() === 'custom';
         const posAnchor = isFree ? (chip.position_anchor || 'top-left') : '';
         const posX = isFree ? String(chip.position_x || 0).trim() : '0';
         const posY = isFree ? String(chip.position_y || 0).trim() : '0';
-        const effectiveFormat = chip.chip_format ? chip.chip_format : chipFormat;
-        const effectiveBg = chip.chip_background !== undefined ? chip.chip_background : rowBg;
+        const effectiveFormat = chip.style ? chip.style : chipFormat;
+        const effectiveBg = chip.background !== undefined ? chip.background : rowBg;
         const classes = ['chip', `overflow-${overflowMode}`];
+        if (hasAnyMarquee) {
+            classes.push('overflow-marquee');
+            if (isLabelMarquee && isValueMarquee) classes.push('marquee-both');
+            else if (isLabelMarquee) classes.push('marquee-label');
+            else classes.push('marquee-value');
+        }
         if (fcLoading) classes.push('chip-loading');
+        if (_fcTemplow !== undefined) classes.push('has-val-low');
         if (effectiveFormat === 'stacked') classes.push('format-stacked');
         else if (effectiveFormat === 'vertical') classes.push('format-vertical');
-        const iconBg = chip.icon_bg !== undefined ? chip.icon_bg : this._config.chip_icon_bg;
+        const iconBg = chip.icon_background !== undefined ? chip.icon_background : this._config.chip_icon_background;
         if (iconBg === true) classes.push('has-icon-bg');
         else if (iconBg === false) classes.push('no-icon-bg');
         if (effectiveBg) {
             classes.push('with-bg');
             if (bgStyle === 'contrast' || bgStyle === 'frosted' || bgStyle === 'theme') classes.push(bgStyle);
-        } else if (iconBg === true || (iconBg !== false && this._config.chip_icon_bg === true)) {
+        } else if (iconBg === true || (iconBg !== false && this._config.chip_icon_background === true)) {
             if (bgStyle === 'contrast' || bgStyle === 'frosted' || bgStyle === 'theme') classes.push(bgStyle);
         }
+        const effectiveBgColor = chip.background_color || this._config.chip_background_color || '';
+        const effectiveIconBgColor = chip.icon_background_color || this._config.chip_icon_background_color || '';
         const inlineStyles = [];
         if (width) { inlineStyles.push(`width:${width};max-width:${width}`); }
-        if (chip.chip_bg_color) inlineStyles.push(`--awc-bottom-bg-color:${chip.chip_bg_color}`);
-        if (chip.chip_padding !== undefined && chip.chip_padding !== '') inlineStyles.push(`padding:${chip.chip_padding}`);
-        if (chip.font_size) inlineStyles.push(`font-size:${chip.font_size};--awc-bottom-font-size:${chip.font_size}`);
-        if (chip.name_font_size) inlineStyles.push(`--awc-chip-name-font-size:${chip.name_font_size}`);
+        if (effectiveBgColor) inlineStyles.push(`--awc-bottom-bg-color:${effectiveBgColor}`);
+        if (effectiveIconBgColor) inlineStyles.push(`--awc-stacked-icon-bg:${effectiveIconBgColor}`);
+        if (chip.padding !== undefined && chip.padding !== '') inlineStyles.push(`padding:${chip.padding}`);
+        if (chip.text_size) inlineStyles.push(`font-size:${chip.text_size};--awc-bottom-font-size:${chip.text_size}`);
+        if (chip.label_size) inlineStyles.push(`--awc-chip-name-font-size:${chip.label_size}`);
         if (chip.inner_gap) inlineStyles.push(`--awc-chip-gap:${chip.inner_gap}`);
+        if (chip.text_gap) inlineStyles.push(`--awc-chip-text-gap:${chip.text_gap}`);
         if (chip.icon_size) inlineStyles.push(`--awc-icon-size:${chip.icon_size}`);
         if (chip.icon_padding) inlineStyles.push(`--awc-icon-padding:${chip.icon_padding}`);
-        const chipAlignClass = chip.chip_align || '';
+        const chipAlignClass = chip.align || '';
         if (chipAlignClass) classes.push(`align-${chipAlignClass}`);
         const style = inlineStyles.length ? ` style="${inlineStyles.join(';')}"` : '';
         const loaderHtml = fcLoading ? '<div class="chip-loader"><span></span><span></span><span></span></div>' : '';
         const html = `<div class="${classes.join(' ')}" data-idx="${idx}"${style}>${loaderHtml}${iconHtml}${nameHtml}${valHtml}</div>`;
-        const sig = `${idx}|${formatted}|${unit}|${iconValue}|${iconStrategy}|${showIcon}|${overflowMode}|${marqueeSpeed}|${marqueeRtl}|${width}|${nameSig}|${effectiveBg}|${bgStyle}|${effectiveFormat}|${iconBg ?? ''}|${isFree}|${posAnchor}|${posX}|${posY}|${chip.chip_bg_color || ''}|${chip.chip_padding ?? ''}|${chip.font_size || ''}|${chip.name_font_size || ''}|${chip.inner_gap || ''}|${chip.icon_size || ''}|${chip.icon_padding || ''}|${chipAlignClass}`;
+        const sig = `${idx}|${formatted}|${unit}|${iconValue}|${iconStrategy}|${showIcon}|${overflowMode}|${labelOverflow}|${marqueeSpeed}|${marqueeRtl}|${width}|${nameSig}|${effectiveBg}|${bgStyle}|${effectiveFormat}|${iconBg ?? ''}|${isFree}|${posAnchor}|${posX}|${posY}|${effectiveBgColor}|${effectiveIconBgColor}|${chip.padding ?? ''}|${chip.text_size || ''}|${chip.label_size || ''}|${chip.inner_gap || ''}|${chip.text_gap || ''}|${chip.icon_size || ''}|${chip.icon_padding || ''}|${chipAlignClass}|${_fcTemplow ?? ''}|${chip.forecast_low_position || ''}`;
         return { html, sig, sensorObj, iconStrategy, showIcon, isFree, posAnchor, posX, posY };
     }
     _updateImage(hass, isNight, weatherState = 'default') {
@@ -2317,8 +2490,8 @@ class AtmosphericWeatherCard extends HTMLElement {
         const img = this._elements.img;
         const slot = this._elements.imageSlot;
         const statusSrc = this._calculateStatusImage(hass, isNight);
-        const baseSrc = isNight ? this._config.night : this._config.day;
-        const src = statusSrc || baseSrc || this._config.day || '';
+        const baseSrc = isNight ? this._config.image_night : this._config.image_day;
+        const src = statusSrc || baseSrc || this._config.image_day || '';
         if (src) {
             if (img.getAttribute('src') !== src) img.src = src;
         } else {
@@ -2326,18 +2499,26 @@ class AtmosphericWeatherCard extends HTMLElement {
         }
         slot.hidden = !img.getAttribute('src');
     }
-    _updateScrollDots(layout, chipCount) {}
     _refreshMarqueeObservation() {
         if (!this._marqueeObserver) {
             this._marqueeObserver = new ResizeObserver(entries => {
-                for (const entry of entries) this._measureMarqueeOne(entry.target);
+                for (const entry of entries) {
+                    entry.target.querySelectorAll('.awc-marquee-host')
+                        .forEach(host => this._measureMarqueeOne(host));
+                }
             });
         }
         this._marqueeObserver.disconnect();
         const bt = this._elements?.chipsRow;
-        if (!bt) return;
-        bt.querySelectorAll('.chip.overflow-marquee .awc-marquee-host')
-          .forEach(host => this._marqueeObserver.observe(host));
+        if (bt) {
+            bt.querySelectorAll('.chip.overflow-marquee')
+              .forEach(chip => this._marqueeObserver.observe(chip));
+        }
+        const tw = this._elements?.textWrapper;
+        if (tw) {
+            tw.querySelectorAll('.chip-free .chip.overflow-marquee')
+              .forEach(chip => this._marqueeObserver.observe(chip));
+        }
     }
     _measureMarqueeOne(host) {
         const track = host.querySelector('.awc-marquee-track');
@@ -2373,7 +2554,7 @@ class AtmosphericWeatherCard extends HTMLElement {
     _computeVerticalVisHeight() {
         const bt = this._elements?.chipsRow;
         if (!bt || !bt.children.length) return;
-        const visCount = parseInt(this._config.chips_visible, 10);
+        const visCount = parseInt(this._config.chip_area_scroll_count, 10);
         if (!Number.isFinite(visCount) || visCount < 1) return;
         const firstChip = bt.children[0];
         if (!firstChip || firstChip.offsetHeight < 1) return;
@@ -2445,7 +2626,7 @@ class AtmosphericWeatherCard extends HTMLElement {
     }
     _updateCanvasDimensions(forceW = null, forceH = null) {
         if (!this._elements?.root || !this._ctxs) return false;
-        if (this._config.square && forceW === null) {
+        if (this._config.card_square && forceW === null) {
             const currentW = this._elements.root.clientWidth;
             if (currentW > 0 && Math.abs(this.clientHeight - currentW) > 1) this.style.height = `${currentW}px`;
         }
@@ -4013,7 +4194,7 @@ class AtmosphericWeatherCard extends HTMLElement {
         const moonRadius = sunBaseR * 0.85;
         const moonScale = moonRadius / 18; // crater geometry authored at r=18
         const useLightColors = !this._isThemeDark;
-            const rawMoonStyle = (this._config.moon_style || '').toLowerCase();
+            const rawMoonStyle = (this._config.celestial_moon_style || '').toLowerCase();
         const isColoredStyle = rawMoonStyle === 'yellow' || rawMoonStyle === 'blue'
             || rawMoonStyle === 'purple' || rawMoonStyle === 'grey';
         const mStyleKey = isColoredStyle ? rawMoonStyle : (useLightColors ? 'blue' : 'dark');
