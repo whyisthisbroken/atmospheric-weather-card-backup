@@ -461,7 +461,7 @@ card_full_width: true
 
 ## Appearance
 
-Everything that controls how your card looks.
+The card has a visual editor that helps you set up different layouts. For those who prefer YAML, here are all the possible settings and features: 
 
 <details>
 <summary><strong>Card Style & Layout</strong></summary>
