@@ -78,7 +78,7 @@ A detail-oriented weather and forecast card.
 
 ## Examples
 
-<img width="400" alt="image" src="https://github.com/user-attachments/assets/42444b7c-628e-4570-99b1-23c84e0af40d" /><br>
+<img width="400" alt="image" src="https://github.com/user-attachments/assets/45e2dec3-60d9-48a6-8171-ec3c3310a7df" /><br>
 <img width="400" alt="Image" src="https://github.com/user-attachments/assets/e6ebd6f5-8eec-4f47-9247-60ee5dbcddf2" /> 
 
 <details>
@@ -287,6 +287,162 @@ grid_options:
 ```
 
 </details>
+
+<details>
+<summary><b>Standalone — Weather Card & Mini-Graph</b></summary>
+
+<br>
+<img width="400" alt="image" src="https://github.com/user-attachments/assets/e2118f91-0eae-4784-871f-cc75142a75cf" />
+
+This example embeds a mini-graph-card with a bit card-mod styling. For extra drama, the large header text is layered behind the weather elements.
+
+<br>
+
+```yaml
+type: custom:atmospheric-weather-card
+weather_entity: weather.your_weather_entity
+sun_entity: sun.sun
+moon_phase_entity: sensor.moon_phase
+card_style: standalone
+card_height: 180px
+card_padding: 16px
+celestial_size: 50
+celestial_alignment: left
+celestial_x: "50"
+celestial_y: 0
+chip_area_position: top-right
+card_hide_text: false
+chip_text_size: 13px
+chip_label_size: 13px
+chip_area_align: center
+chip_area_width: 240px
+chip_padding: 8px 12px
+chip_area_padding: 0px
+chip_area_gap: 8px
+chip_gap: 8px
+chip_icon_size: 16px
+chip_area_background: true
+custom_cards_position: bottom-left
+chips:
+  - entity: weather.your_weather_entity
+    position: custom
+    position_anchor: top-left
+    position_y: 16px
+    text_size: 36px
+    hide_icon: true
+    hide_label: true
+    attribute: temperature
+    background: false
+    position_x: 16px
+    padding: 0px 8px
+    behind_effects: true
+    fancy_unit: true
+    value_weight: "700"
+  - entity: weather.your_weather_entity
+    forecast: daily
+    attribute: temperature
+    forecast_show_min: true
+    forecast_precision: 0
+    forecast_offset: 1
+    style: inline
+    align: start
+    icon_background: false
+    name: Heute
+    icon: weather
+    label_overflow: marquee
+  - entity: weather.your_weather_entity
+    forecast: daily
+    attribute: precipitation_probability
+    forecast_show_min: true
+    forecast_precision: 0
+    forecast_offset: 1
+    style: inline
+    align: end
+    icon_background: false
+    name: Regen
+    unit_format: " %"
+chip_icon_padding: 0px
+grid_options:
+  rows: auto
+custom_cards:
+  - type: custom:mini-graph-card
+    custom_width: 100%
+    entities:
+      - entity: sensor.your_temperature_sensor
+    show:
+      icon: false
+      name: false
+      state: false
+      labels: true
+      fill: false
+      labels_secondary: true
+      points: false
+      legend: false
+    animate: false
+    height: 80
+    line_width: 4
+    hours_to_show: 24
+    points_per_hour: 2
+    color_thresholds:
+      - value: -10
+        color: rgba(84, 136, 199, 0.6)
+      - value: -5
+        color: rgba(105, 169, 209, 0.6)
+      - value: 0
+        color: rgba(131, 196, 207, 0.6)
+      - value: 5
+        color: rgba(156, 217, 198, 0.6)
+      - value: 10
+        color: rgba(189, 230, 185, 0.6)
+      - value: 15
+        color: rgba(224, 237, 171, 0.6)
+      - value: 20
+        color: rgba(242, 219, 145, 0.6)
+      - value: 25
+        color: rgba(235, 182, 115, 0.6)
+      - value: 30
+        color: rgba(224, 143, 94, 0.6)
+      - value: 35
+        color: rgba(214, 100, 84, 0.6)
+    card_mod:
+      style: |
+        ha-card {
+          border-radius: 0px;
+          box-shadow: none;
+          background-color: transparent;
+        }
+
+        .graph__labels {
+            opacity: 1 !important;
+            align-items: flex-end !important;
+            flex-direction: row-reverse !important;
+            margin: 0px 14px 0px 0px !important;
+            padding: 2px 4px !important;
+            gap: 8px !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+        }
+
+        .graph__labels span {
+            background-color: color-mix(in srgb, var(--ha-card-background, var(--card-background-color, var(--primary-background-color))) 20%, transparent) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            padding: 4px 8px !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.18), inset 0 -1px 1px rgba(0,0,0,0.10) !important;
+            border-radius: calc(var(--ha-card-border-radius, 12px) - 5px) !important;
+        }
+
+        .graph__labels span:after {
+            content: " °C";
+            opacity: 0.6;
+        }
+```
+
+<br>
+
+</details>
+
 
 <details>
 <summary><b>Standalone — Hourly Forecast Slider</b></summary>
