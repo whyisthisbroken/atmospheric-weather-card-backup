@@ -99,20 +99,16 @@ card_padding: 16px
 celestial_size: 50
 celestial_x: "-70"
 celestial_y: center
-top_text_position: top-left
-chip_area_position: bottom-left
-top_text_hide: false
-top_text_size: 36px
-top_text_padding: 4px 8px
 chip_text_size: 14px
 chip_label_size: 14px
+chip_padding: 8px 16px 8px 8px
+chip_area_gap: 0px
+chip_gap: 8px
+chip_area_position: bottom-left
 chip_area_layout: horizontal-scroll
 chip_area_scroll_count: 1
 chip_area_align: center
 chip_area_width: 160px
-chip_padding: 8px 16px 8px 8px
-chip_area_gap: 0px
-chip_gap: 8px
 chip_area_background: true
 chip_icon_background: false
 chip_icon_padding: 4px
@@ -120,6 +116,20 @@ chip_icon_size: 26px
 chip_area_grouped: true
 chip_area_separator: true
 chips:
+  - entity: weather.your_weather_entity
+    attribute: temperature
+    position: custom
+    position_anchor: top-left
+    position_x: 16px
+    position_y: 16px
+    text_size: 34px
+    background: false
+    padding: 0px 4px
+    hide_icon: true
+    hide_label: true
+    fancy_unit: true
+    value_weight: "600"
+    behind_effects: true
   - icon: weather
     entity: weather.your_weather_entity
     icon_path: /local/Icons/weather/variant-1/ # Change to your local icon path
@@ -168,11 +178,7 @@ card_padding: 16px
 celestial_size: 50
 celestial_alignment: left
 celestial_x: "70"
-top_text_position: top-left
 chip_area_position: top-right
-top_text_hide: true
-top_text_size: 32px
-top_text_padding: 4px 8px
 chip_text_size: 13px
 chip_label_size: 13px
 chip_area_layout: horizontal-scroll
@@ -302,10 +308,7 @@ card_padding: 16px
 celestial_size: 50
 celestial_x: "130"
 celestial_y: center
-top_text_position: top-left
 chip_area_position: top-right
-top_text_size: 28px
-top_text_padding: 2px 4px
 chip_text_size: 14px
 chip_label_size: 14px
 chip_area_layout: vertical-scroll
@@ -318,11 +321,24 @@ chip_icon_background: false
 chip_icon_padding: 0px
 chip_gap: 8px
 chip_icon_size: 24px
-top_text_background: false
 chip_area_background: true
 chip_area_grouped: true
 chip_area_separator: true
 chips:
+  - entity: weather.your_weather_entity
+    attribute: temperature
+    position: custom
+    position_anchor: top-left
+    position_x: 16px
+    position_y: 16px
+    text_size: 28px
+    background: false
+    padding: 0px 4px
+    hide_icon: true
+    hide_label: true
+    fancy_unit: true
+    value_weight: "600"
+    behind_effects: true
   - entity: weather.your_weather_entity
     attribute: precipitation_probability
     icon_background: true
@@ -398,15 +414,22 @@ card_padding: 16px
 celestial_size: 45px
 celestial_x: "-65"
 celestial_y: center
-top_text_entity: sensor.time
-top_text_position: top-left
 chip_area_position: bottom-left
-top_text_size: 42px
-top_text_padding: 8px 0px 0px 4px
 chip_area_background: true
 card_mask_vertical: true
 card_mask_horizontal: true
 chips:
+  - entity: sensor.time
+    position: custom
+    position_anchor: top-left
+    position_x: 16px
+    position_y: 16px
+    text_size: 42px
+    background: false
+    padding: 0px 4px
+    hide_icon: true
+    hide_label: true
+    value_weight: "700"
   - entity: weather.your_weather_entity
     icon: weather
 ```
@@ -438,21 +461,29 @@ image_scale: 90
 status_entity: binary_sensor.contact_sensor_door
 status_day: /local/home-day-door-open.png
 status_night: /local/home-night-door-open.png
-top_text_entity: sensor.time
-top_text_position: bottom-left
 chip_area_position: top-right
-top_text_padding: 0px 16px
 chip_area_width: 70%
 chip_padding: 10px 14px
 chip_area_background: true
 custom_cards_position: top-right
+card_full_width: true
 chips:
+  - entity: sensor.time
+    position: custom
+    position_anchor: bottom-left
+    position_x: 16px
+    position_y: 16px
+    text_size: 34px
+    background: false
+    padding: 0px 4px
+    hide_icon: true
+    hide_label: true
+    value_weight: "700"
   - entity: sensor.temperature
   - entity: sensor.humidity
   - entity: sensor.open_windows
     icon: mdi:window-open-variant
     name: Windows
-card_full_width: true
 ```
 
 </details>
@@ -509,29 +540,9 @@ The sun and moon share a single position and the card swaps them based on your `
 </details>
 
 <details>
-<summary><strong>Top Text</strong></summary>
-
-The top text is the large primary line (temperature by default).
-
-| Option | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `top_text_entity` | `string` | — | The entity to display as the large top text. Defaults to the temperature from your weather entity. Standard entities will automatically translate to your HA language. |
-| `top_text_position` | `string` | `top-left` | Where the top text anchors inside the card. 9-cell grid: `top-left`, `top-center`, `top-right`, `left`, `center`, `right`, `bottom-left`, `bottom-center`, `bottom-right`. |
-| `top_text_size` | `string` | — | Sets the font size of the top text directly without needing a custom theme or `card_mod`. Accepts any CSS size value (e.g., `3em`, `48px`). |
-| `top_text_unit` | `string` | — | Replaces the unit shown after the value. For example, set to `°` to display `21°` instead of `21 °C`. Only shown when `top_text_entity` points at a non-weather entity. |
-| `top_text_padding` | `string` | `8px 14px` | Inner padding around the top text (e.g., `8px 14px`). |
-| `top_text_background` | `boolean` | `false` | Adds a styled background behind the top text to improve readability against the weather visuals. |
-| `top_text_behind` | `boolean` | `false` | Places the top text behind the weather canvases so clouds, rain and particles pass over it. Text backgrounds are disabled while behind. |
-| `card_background_style` | `string` | `frosted` | Style used by the text and chips backgrounds. Options: `frosted` (translucent fill with a thin border, looks like a small glass container), `pill` (more opaque and higher contrast), `theme` (uses your current Home Assistant card styling). |
-| `top_text_hide` | `boolean` | `false` | Hides only the top text. |
-| `card_hide_text` | `boolean` | `false` | Hides the top text and the chips row in one go. |
-
-</details>
-
-<details>
 <summary><strong>Chips</strong></summary>
 
-Chips are the small detail elements below (or next to) the top text. Each chip can display either live entity data or forecast data, and you can define as many as you want. Every chip has its own entity, optional icon, label, width, overflow behavior, and tap action. The row layout controls whether they wrap, scroll horizontally, or sit in a fixed grid.
+Each chip can display either live entity data or forecast data, and you can define as many as you want. Every chip has its own entity, optional icon, label, width, overflow behavior, and tap action. The row layout controls whether they wrap, scroll horizontally, or sit in a fixed grid.
 
 For a more detailed walkthrough — including how to set up forecast chips, per-chip styling, and free positioning — see the [Chips guide](#chips).
 
@@ -541,7 +552,7 @@ For a more detailed walkthrough — including how to set up forecast chips, per-
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `chips` | `list` | — | The list of chips to display. Each entry is an object with its own settings (see below). |
-| `chip_area_position` | `string` | `bottom-left` | Where the chips row anchors. Same 9-cell grid as `top_text_position`. |
+| `chip_area_position` | `string` | `bottom-left` | Where the chips row is positioned. |
 | `chip_area_layout` | `string` | `wrap` | Row behavior. `wrap` moves overflowing chips to a new line, `horizontal-scroll` keeps them on one line with a hidden scrollbar and edge fades, `vertical-scroll` stacks them in a scrollable column, `grid` arranges them in equal columns. `scroll` is accepted as an alias for `horizontal-scroll`. |
 | `chip_area_columns` | `number` | `3` | Number of equal-width columns when `chip_area_layout: grid` is active. |
 | `chip_area_align` | `string` | `start` | How each chip aligns inside its grid cell. Options: `start`, `center`, `end`. Grid layout only. |
@@ -711,9 +722,6 @@ custom_cards:
 | `--awc-text-shadow-night` | *soft dark glow* | Text shadow effect for nighttime. |
 | `--awc-text-shadow-active` | *auto* | Resolved text shadow for the current scheme. Overrides both day and night shadows at once. |
 | `--awc-chip-text-shadow` | `0 1px 2px rgba(0,0,0,0.35)` | Text shadow applied to the chip name label. |
-| `--awc-top-font-size` | `clamp(24px, 11cqw, 52px)` | Top text size (dynamically responsive). |
-| `--awc-top-font-weight` | `600` | Top text weight. |
-| `--awc-top-padding` | `0` (`8px 14px` with background) | Padding around the top text. |
 | `--awc-bottom-font-size` | `clamp(15px, 5cqmin, 26px)` | Chip text size (dynamically responsive). |
 | `--awc-bottom-font-weight` | `500` | Chip text weight. |
 | `--awc-bottom-gap` | `8px` | Gap between chips in the row. |
@@ -728,9 +736,6 @@ custom_cards:
 | `--awc-row-columns` | `3` | Number of columns when `chip_area_layout: grid` is active. |
 | `--awc-row-fade-l` | *auto* | Left edge fade width for the scrolling chip row. |
 | `--awc-row-fade-r` | *auto* | Right edge fade width for the scrolling chip row. |
-| `--awc-top-bg-color` | *auto* | Background color when `top_text_background` is enabled. Defaults to the active background style. |
-| `--awc-top-bg-radius` | *card radius* | Border radius for the top text background. |
-| `--awc-top-bg-filter` | `blur(10px)` | Backdrop filter for the top text background (only used by the `frosted` style). |
 | `--awc-bottom-bg-color` | *auto* | Background color when `chip_area_background` is enabled. Defaults to the active background style. |
 | `--awc-bottom-bg-radius` | *card radius* | Border radius for the chip background. |
 | `--awc-bottom-bg-filter` | `blur(10px)` | Backdrop filter for the chip background (only used by the `frosted` style). |
