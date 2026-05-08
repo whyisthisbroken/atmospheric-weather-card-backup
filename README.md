@@ -294,7 +294,7 @@ grid_options:
 <br>
 <img width="400" alt="image" src="https://github.com/user-attachments/assets/e2118f91-0eae-4784-871f-cc75142a75cf" />
 
-This example embeds a mini-graph-card with a bit card-mod styling. For extra drama, the large header text is layered behind the weather elements.
+This example embeds a mini-graph-card with a bit of card-mod styling. For extra drama, the large header text is layered behind the weather elements.
 
 <br>
 
