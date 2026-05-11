@@ -13,23 +13,23 @@ body:
     attributes:
       label: Prerequisites & Troubleshooting
       description: Please confirm these steps before submitting your issue.
-    options:
-      - label: I have read the relevant sections of the README and searched for existing issues.
-        required: true
-      - label: I have tested the card isolated as a single card on a brand new, blank dashboard and the issue persists.
-        required: true
-      - label: I have temporarily switched to the default Home Assistant theme and the issue persists.
-        required: true
+      options:
+        - label: I have read the relevant sections of the README and searched for existing issues.
+          required: true
+        - label: I have tested the card isolated as a single card on a brand new, blank dashboard and the issue persists.
+          required: true
+        - label: I have temporarily switched to the default Home Assistant theme and the issue persists.
+          required: true
   - type: dropdown
     id: theme-type
     attributes:
       label: Home Assistant Theme
       description: What theme are you using when you experience this bug?
-    options:
-      - Default Theme (Auto)
-      - Default Theme (Light)
-      - Default Theme (Dark)
-      - Custom Theme
+      options:
+        - Default Theme (Auto)
+        - Default Theme (Light)
+        - Default Theme (Dark)
+        - Custom Theme
     validations:
       required: true
   - type: textarea
@@ -53,15 +53,15 @@ body:
     attributes:
       label: Browser / App
       description: Where are you seeing this bug?
-    options:
-      - Google Chrome
-      - Mozilla Firefox
-      - Apple Safari
-      - Microsoft Edge
-      - Home Assistant Companion App (iOS)
-      - Home Assistant Companion App (Android)
-      - Fully Kiosk Browser
-      - Other
+      options:
+        - Google Chrome
+        - Mozilla Firefox
+        - Apple Safari
+        - Microsoft Edge
+        - Home Assistant Companion App (iOS)
+        - Home Assistant Companion App (Android)
+        - Fully Kiosk Browser
+        - Other
     validations:
       required: true
   - type: textarea
