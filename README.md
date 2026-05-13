@@ -444,11 +444,10 @@ custom_cards:
 
 
 <details>
-<summary><b>Standalone — Hourly Forecast Slider</b></summary>
+<summary><b>Standalone — Circular Gauge Chip</b></summary>
 
 <br>
-<img width="400" alt="image" src="https://github.com/user-attachments/assets/7118284c-bf43-43f2-b910-219dd9fb767b" />
-
+<img width="400" alt="Image" src="https://github.com/user-attachments/assets/b060b527-5d48-42de-8541-16fc4883ce10" />
 
 <br>
 
@@ -458,93 +457,124 @@ weather_entity: weather.your_weather_entity
 sun_entity: sun.sun
 moon_phase_entity: sensor.moon_phase
 card_style: standalone
-card_height: 130px
+card_height: 120px
 card_padding: 16px
 celestial_size: 50
-celestial_x: "130"
-celestial_y: center
-chip_area_position: top-right
-chip_text_size: 14px
-chip_label_size: 14px
-chip_area_layout: vertical-scroll
-chip_area_scroll_count: 2
-chip_area_align: spread
+celestial_alignment: center
+chip_area_position: bottom-left
+chip_text_size: 12px
+chip_label_size: 8px
+chip_area_layout: horizontal-scroll
+chip_area_scroll_count: 1
+chip_area_align: center
 chip_area_width: 160px
-chip_padding: 8px 12px 8px 10px
-chip_area_gap: 0px
-chip_icon_background: false
-chip_icon_padding: 0px
-chip_gap: 8px
-chip_icon_size: 24px
+chip_padding: 0px
+chip_area_padding: 0px
+chip_area_gap: 8px
+chip_gap: 6px
+chip_text_gap: 4px
+chip_icon_size: 22px
+chip_style: vertical
 chip_area_background: true
-chip_area_grouped: true
-chip_area_separator: true
+chip_icon_background_color: rgba(255,255,255,0.55)
+chip_icon_background: false
+custom_cards_position: bottom-left
+perf_fps: 30
+perf_cloud_quality: 2
+perf_effects: 2
+perf_dpr: 2
 chips:
   - entity: weather.your_weather_entity
-    attribute: temperature
     position: custom
     position_anchor: top-left
-    position_x: 16px
     position_y: 16px
-    text_size: 28px
-    background: false
-    padding: 0px 4px
+    text_size: 30px
     hide_icon: true
     hide_label: true
-    fancy_unit: true
-    value_weight: "600"
+    attribute: temperature
+    background: false
+    position_x: 16px
+    padding: 0px 8px
     behind_effects: true
-  - entity: weather.your_weather_entity
-    attribute: precipitation_probability
-    icon_background: true
+    fancy_unit: true
+    value_weight: "700"
+  - attribute: precipitation_probability
+    entity: weather.your_weather_entity
+    style: vertical
+    icon_size: 16px
+    padding: 12px
+    ring_width: 6px
+    type: ring
+    align: center
+    forecast: daily
+    name: Rain
+    ring_gap: 6px
+    ring_min: 0
+    ring_max: 100
+    ring_threshold_mode: gradient
+    ring_thresholds:
+      - value: 0
+        color: rgba(142, 164, 188, 0.9)
+      - value: 10
+        color: rgba(119, 149, 180, 0.9)
+      - value: 20
+        color: rgba(96, 134, 172, 0.9)
+      - value: 30
+        color: rgba(74, 118, 163, 0.9)
+      - value: 40
+        color: rgba(87, 133, 161, 0.9)
+      - value: 50
+        color: rgba(68, 126, 156, 0.9)
+      - value: 60
+        color: rgba(50, 119, 151, 0.9)
+      - value: 70
+        color: rgba(102, 107, 153, 0.9)
+      - value: 80
+        color: rgba(86, 88, 138, 0.9)
+      - value: 90
+        color: rgba(70, 69, 122, 0.9)
+    marquee_speed: 55
+    forecast_offset: 0
     position: custom
-    position_anchor: bottom-left
+    position_anchor: top-right
     position_x: 16px
     position_y: 16px
-    icon: mdi:umbrella
-    icon_size: 14px
-    padding: 8px 12px 8px 8px
-    inner_gap: 8px
-    text_size: 12px
-    style: stacked
-    align: start
-    name: Rain
-    label_size: 10px
-    icon_padding: 0px
-    icon_background_color: rgba(134, 172, 201, 0.5)
-    forecast: daily
-    unit_format: " %"
     forecast_precision: 0
-  - entity: weather.your_weather_entity
-    forecast: hourly
+    height: 78px
+  - forecast: daily
     attribute: temperature
+    entity: weather.your_weather_entity
+    style: inline
     icon: weather
-    forecast_precision: 0
-    icon_path: /local/Icons/weather/variant-1/
-    icon_background: false
-  - entity: weather.your_weather_entity
-    forecast: hourly
+    icon_path: /local/your-icon-folder/
+    padding: 6px 10px
+    text_size: 13px
+    label_size: 13px
+    text_gap: 4px
+    name: Today
+    value_weight: "600"
+    overflow: marquee
+    label_overflow: ellipsis
+    forecast_show_min: true
+  - forecast: daily
     attribute: temperature
     forecast_offset: 1
+    entity: weather.your_weather_entity
+    style: inline
     icon: weather
-    forecast_precision: 0
-    icon_path: /local/Icons/weather/variant-1/
-  - entity: weather.your_weather_entity
-    forecast: hourly
-    attribute: temperature
-    forecast_offset: 2
-    icon: weather
-    forecast_precision: 0
-    icon_path: /local/Icons/weather/variant-1/
-  - entity: weather.your_weather_entity
-    forecast: hourly
-    attribute: temperature
-    forecast_offset: 3
-    icon: weather
-    forecast_precision: 0
-    icon_path: /local/Icons/weather/variant-1/
+    icon_path: /local/your-icon-folder/
+    padding: 6px 10px
+    text_size: 13px
+    label_size: 13px
+    text_gap: 4px
+    value_weight: "600"
+    name: Tomorrow
+    overflow: marquee
+    label_overflow: ellipsis
+    forecast_show_min: true
 grid_options:
   rows: auto
+
 ```
 
 <br>
