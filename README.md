@@ -727,6 +727,11 @@ For a more detailed walkthrough — including how to set up forecast chips, per-
 | `chip_icon_padding` | `string` | — | Global padding around the icon for all chips. |
 | `chip_icon_background` | `boolean` | `false` | Adds a background behind the icon area of each chip. |
 | `chip_area_background` | `boolean` | `false` | Adds a styled background behind each chip (the style is controlled by `card_background_style`). |
+| `chip_area_separator` | `boolean` | `false` | Adds a thin divider line between chips. Only visible when `chip_area_grouped` is enabled. |
+| `chip_background_color` | `string` | — | Custom background color applied to all chips. Accepts any CSS color value, including `rgba()`. |
+| `chip_icon_background_color` | `string` | — | Custom background color for the icon area of all chips. |
+| `chip_area_background_color` | `string` | — | Custom background color for the grouped container when `chip_area_grouped` is enabled. |
+| `chip_text_gap` | `string` | `0.35em` | Gap between the name label and the value text inside each chip. |
 | `chip_area_hide` | `boolean` | `false` | Hides the chips row entirely. |
 
 </details>
@@ -749,8 +754,12 @@ Each entry inside the `chips` list accepts the following keys.
 | `icon` | `string` | *auto* | An `mdi:` icon (e.g., `mdi:water-percent`), the keyword `weather` to automatically show the icon matching the current weather state (or the forecasted condition when using `forecast`), or empty to inherit the sensor's own icon. |
 | `icon_path` | `string` | — | Folder for custom SVG icons (e.g., `/local/weather-icons/`). When set, the value of `icon` resolves to an image file instead of an MDI icon. For example, `icon: weather` combined with `icon_path: /local/weather-icons/` loads `/local/weather-icons/rainy.svg` for rainy weather. You can find the animated SVG icons from the examples [here](https://github.com/basmilius/weather-icons). |
 | `hide_icon` | `boolean` | `false` | Hides the icon for this chip. |
+| `hide_label` | `boolean` | `false` | Hides the name label for this chip. |
+| `hide_value` | `boolean` | `false` | Hides the value text for this chip. |
+| `fancy_unit` | `boolean` | `false` | Renders the temperature unit as a small superscript next to the value. Only works when reading a `temperature` attribute from a weather entity. |
 | `width` | `string` | — | Limits the chip's width (e.g., `60%` or `200px`). Required for marquee overflow. |
 | `overflow` | `string` | `ellipsis` | How text exceeding `width` is handled. Options: `ellipsis` (cuts off with `…`), `clip` (cuts off without indicator), `wrap` (breaks onto a second line), `marquee` (scrolls horizontally). |
+| `label_overflow` | `string` | `ellipsis` | How the name label handles overflow. Same options as `overflow`. |
 | `marquee_speed` | `number` | `30` | Scroll speed in pixels per second when `overflow: marquee` is active. Minimum `5`. |
 | `marquee_rtl` | `boolean` | `false` | Reverses the marquee direction (scrolls right-to-left). |
 | `card_tap_action` | `object` | `more-info` | A standard Home Assistant [tap action](https://www.home-assistant.io/dashboards/actions/) scoped to this chip. |
@@ -760,6 +769,8 @@ Each entry inside the `chips` list accepts the following keys.
 | `position_anchor` | `string` | `top-left` | Anchor point for a free-positioned chip. Same 9-cell grid as `top_text_position`. |
 | `position_x` | `string` | `0` | Horizontal offset for a free-positioned chip (e.g., `20px`, `10%`). |
 | `position_y` | `string` | `0` | Vertical offset for a free-positioned chip (e.g., `20px`, `10%`). |
+| `behind_effects` | `boolean` | `false` | Places the chip behind the weather animations. Only works on free-positioned chips. |
+| `forecast_low_position` | `string` | — | Where to show the low temperature when `forecast_show_min` is active. `beside` places it inline (e.g., `8 – 18`). `below` renders it on a second line under the high. |
 
 </details>
 
@@ -780,7 +791,11 @@ Every chip can override the global row styles individually. This is what makes i
 | `icon_size` | `string` | — | Overrides the icon size for this chip. |
 | `icon_padding` | `string` | — | Overrides the icon padding for this chip. |
 | `icon_background` | `boolean` | — | Overrides the global `chip_icon_background` for this chip. |
+| `icon_background_color` | `string` | — | Custom background color for the icon area. Accepts any CSS color value, including `rgba()`. |
 | `align` | `string` | — | Content alignment within this chip. Options: `start`, `center`, `end`. |
+| `value_weight` | `string` | — | Font weight of the value text (e.g., `500`, `600`, `700`). |
+| `text_gap` | `string` | — | Overrides the gap between the name label and value for this chip. |
+| `chip_round` | `boolean` | `false` | Forces a fully rounded (pill) shape on this chip. |
 
 </details>
 
@@ -839,6 +854,21 @@ custom_cards:
 
 > [!TIP]
 > For custom button layouts, I highly recommend using `paper-buttons-row` from HACS. It gives you the flexibility to build incredibly detailed and beautiful designs. Check out the advanced [examples](#usage-modes) for a few prebuilt layouts you can customize.
+
+</details>
+
+<details>
+<summary><strong>Performance Settings</strong></summary>
+
+The card ships with three presets — `low`, `default`, and `ultra` — which cover most setups. If you need more control, each setting can be tuned individually. Any value set manually overrides the preset.
+
+| Option | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `perf_mode` | `string` | `default` | Performance preset. `low` disables effects and lowers resolution for weak devices. `default` is balanced. `ultra` raises the frame rate and cloud detail to maximum. |
+| `perf_fps` | `number` | `30` | Animation frame rate. `30` saves battery, `60` is smoother. |
+| `perf_cloud_quality` | `number` | `1.5` | Cloud detail level. Controls how many puffs each cloud shape gets. `0.5` = low, `1` = medium, `1.5` = high, `2` = ultra. |
+| `perf_effects` | `number` | `1` | Weather effects intensity. `0` disables birds, planes, shooting stars, aurora, and wind vapor. `1` enables them at default rates. `2` increases spawn rates for all effects. |
+| `perf_dpr` | `number` | `2` | Canvas sharpness. Controls the device pixel ratio used for rendering. `0.5` = low, `1` = medium, `1.5` = high, `2` = full retina. Lower values reduce GPU load on high-DPI screens. |
 
 </details>
 
@@ -1075,6 +1105,59 @@ Free-positioned chips can still use all the same styling and forecast options as
 
 </details>
 
+<details>
+<summary><strong>Ring gauge</strong></summary>
+
+<br>
+
+Any chip can be turned into a circular gauge by setting `type: ring`. The ring fills proportionally based on the entity's value within a min/max range. This works well for things like battery levels, humidity, CPU usage, or any numeric sensor.
+
+```yaml
+chips:
+  - entity: sensor.living_room_humidity
+    type: ring
+    ring_min: 0
+    ring_max: 100
+    ring_width: 4
+    ring_gap: 3
+    ring_color: "#03a9f4"
+    style: vertical
+    hide_label: true
+    icon: mdi:water-percent
+```
+
+You can add color thresholds that change the ring color when the value passes a certain point. Threshold colors support three modes: `solid` fills the entire ring with the matching threshold color, `segments` draws each threshold range as a separate colored arc, and `gradient` blends smoothly between threshold colors.
+
+```yaml
+chips:
+  - entity: sensor.cpu_temperature
+    type: ring
+    ring_min: 30
+    ring_max: 100
+    ring_color: "#4caf50"
+    ring_threshold_mode: solid
+    ring_thresholds:
+      - value: 60
+        color: "#ff9800"
+      - value: 80
+        color: "#f44336"
+```
+
+**Ring-specific options:**
+
+| Option | What it does |
+| :--- | :--- |
+| `type` | Set to `ring` to enable the ring gauge. |
+| `ring_min` | Minimum value for the gauge range (default `0`). |
+| `ring_max` | Maximum value for the gauge range (default `100`). |
+| `ring_width` | Thickness of the ring stroke in pixels (default `4`). |
+| `ring_gap` | Gap between the ring and the chip content in pixels (default `3`). |
+| `ring_color` | Color of the filled portion. Accepts any CSS color. Defaults to your theme's primary color. |
+| `ring_threshold_mode` | How thresholds are applied. `solid` fills the whole ring with the matched color. `segments` draws each range as a separate arc. `gradient` blends between colors. |
+| `ring_thresholds` | A list of `{ value, color }` entries. The ring changes color when the value exceeds a threshold. |
+
+</details>
+
 <br>
 
 </details>
@@ -1144,7 +1227,7 @@ Fast performance and impressive animations are basically natural enemies when bu
 
 The card uses every trick available to keep things running smoothly. Because of this, almost a third of the code exists purely to keep the card fast. I really dislike how much this adds to the size of the code, but that is just how it is.
 
-Even with all this effort, older setups might still struggle, and the birds may stutter.
+Even with all this effort, older setups might still struggle, and the birds may stutter. If that happens, try switching `perf_mode` to `low` — it disables the extra effects and lowers the rendering resolution. You can also fine-tune the frame rate, cloud detail, effects intensity, and canvas sharpness individually. See the [Performance Settings](#appearance) reference table for all options.
 
 <details>
 <summary><b>View stress test results</b></summary>
