@@ -227,7 +227,7 @@ grid_options:
 
 <br>
 
-<img width="400" alt="Image" src="https://github.com/user-attachments/assets/e0781ab6-abee-4783-8ee4-4cd6791cbce7" />
+<img width="400" alt="Image" src="https://github.com/user-attachments/assets/2baaac73-6f13-4803-8961-0665dcae7beb" />
 
 <details>
 <summary><b>Featuring Mini-graph</b></summary>
