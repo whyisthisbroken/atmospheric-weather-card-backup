@@ -78,7 +78,7 @@ A detail-oriented weather and forecast card.
 
 ## Examples
  
-You can customize these examples however you like. If you want the exact same look, use the guides to add the [fonts](#font-family) and [weather icons](#weather-icons).
+The card is meant to be pretty flexible. You can customize these examples however you like, mix different elements, or combine them with other Home Assistant cards. If you want the exact look from the screenshots, use the guides to add the [fonts](#font-family) and [weather icons](#weather-icons).
 
 <br>
 
@@ -396,7 +396,7 @@ custom_cards:
 <img width="400" alt="Image" src="https://github.com/user-attachments/assets/b060b527-5d48-42de-8541-16fc4883ce10" />
 
 <details>
-<summary><b>Forecast & Gauge Chip</b></summary>
+<summary><b>Forecast & Ring Chip</b></summary>
 
 ```yaml
 type: custom:atmospheric-weather-card
