@@ -16,7 +16,7 @@ A detail-oriented weather and forecast card.
 
 **Customization** · [Appearance](#appearance) · [CSS Variables](#css-variables)
 
-**Guides** · [Chips](#chips) · [Fonts & Icons](#fonts--icons) · [House Image](#custom-house-image)
+**Guides** · [Chips](#chips) · [Font](#font-family) · [Icons](#weather-icons) · [House Image](#custom-house-image)
 
 **Reference** · [Color Mode](#color-mode) · [Performance](#performance)
 
@@ -77,8 +77,8 @@ A detail-oriented weather and forecast card.
 <br>
 
 ## Examples
-
-All examples use scrollable chips and you can change and mix the elements as needed.
+ 
+You can customize these examples however you like. If you want the exact same look, use the guides to add the [fonts](#font-family) and [weather icons](#weather-icons).
 
 <br>
 
@@ -534,7 +534,12 @@ grid_options:
 
 ## Appearance
 
-The card has a visual editor that helps you set up different layouts. For those who prefer YAML, here are all the possible settings and features: 
+The card has a visual editor for setting up layouts. All YAML settings are listed below.
+
+<details>
+<summary><b>All settings</b></summary>
+
+<br>
 
 <details>
 <summary><strong>Card Style & Layout</strong></summary>
@@ -584,9 +589,7 @@ The sun and moon share a single position and the card swaps them based on your `
 <details>
 <summary><strong>Chips</strong></summary>
 
-Each chip can display either live entity data or forecast data, and you can define as many as you want. Every chip has its own entity, optional icon, label, width, overflow behavior, and tap action. The row layout controls whether they wrap, scroll horizontally, or sit in a fixed grid.
-
-For a more detailed walkthrough — including how to set up forecast chips, per-chip styling, and free positioning — see the [Chips guide](#chips).
+Chips are the main layout element of this card. Each chip can show live entity data or forecast data, and you can add as many as you want. For a walkthrough on how to set them up, see the [Chips guide](#chips).
 
 <details>
 <summary><strong>Row options</strong></summary>
@@ -664,7 +667,7 @@ Each entry inside the `chips` list accepts the following keys.
 <details>
 <summary><strong>Per-chip style overrides</strong></summary>
 
-Every chip can override the global row styles individually. This is what makes it possible to mix completely different-looking chips in a single card — for example, a large stacked forecast chip next to a small inline live sensor.
+Every chip can override the global row styles individually. This is what makes it possible to mix completely different-looking chips in a single card, for example a large stacked forecast chip next to a small inline live sensor.
 
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
@@ -745,7 +748,7 @@ custom_cards:
 <details>
 <summary><strong>CSS Variables</strong></summary>
 
-> Most users won't need these. The options above cover all common use cases. These CSS variables are here for fine-tuning specific details like font sizes, shadows, and spacing — either in your theme or via `card_mod`.
+> Most users won't need these. The options above cover all common use cases. These CSS variables are here for fine-tuning specific details like font sizes, shadows, and spacing, either in your theme or via `card_mod`.
 
 <details>
 <summary><b>Card Variables</b></summary>
@@ -847,6 +850,8 @@ These variables only apply when `chip_style` is set to `stacked` or `vertical`.
 
 </details>
 
+</details>
+
 <br>
 
 ## Color Mode
@@ -875,7 +880,7 @@ The card's appearance depends on your **`sun_entity`** (sun or moon) and your **
 <details>
 <summary><b>Chips & Forecasts</b></summary>
 
-Chips are basically buttons you can optionally add to the card. You can add as many as you like and show live info, like current weather conditions or data from any Home Assistant entity, but also weather forecasts. You can leave them grouped in a row and make them all look the same (useful for building a daily forecast), or you can style and position each one individually.
+Chips are basically buttons you can optionally add to the card. You can add as many as you like and show live info, like current weather conditions or data from any Home Assistant entity, but also weather forecasts. You can leave them grouped in a row and make them all look the same (useful for building a daily forecast), or you can style and position each one individually. All available settings are listed in the [Appearance](#appearance) section.
 
 <details>
 <summary><strong>Forecast chips</strong></summary>
@@ -947,7 +952,7 @@ chips:
 
 The first two chips follow the global `inline` style and default background. The third chip overrides everything it needs to look different.
 
-All per-chip style overrides are listed in the [Chips reference table](#appearance) under "Per-chip style overrides".
+All per-chip style overrides are listed in the [Appearance](#appearance) section under "Per-chip style overrides".
 
 </details>
 
@@ -1031,23 +1036,21 @@ chips:
 
 </details>
 
-<a name="fonts--icons"></a>
+<a name="font-family"></a>
 <details>
-<summary><b>Fonts & Icons</b></summary>
-
-If you want to use the exact fonts and weather icons from the screenshots in your own setup, here's how.
-
-<details>
-<summary><strong>Font family used in the examples</strong></summary>
+<summary><b>Font Family</b></summary>
 
 <br>
 
 The screenshots throughout this README use the **Montserrat** font, which you can download or embed directly from [Google Fonts](https://fonts.google.com/specimen/Montserrat). Once it's loaded into your Home Assistant frontend (for example via a custom theme), it applies to this card along with the rest of your dashboard — the card inherits whatever font your theme sets.
 
+<br>
+
 </details>
 
+<a name="weather-icons"></a>
 <details>
-<summary><strong>Custom SVG weather icons</strong></summary>
+<summary><b>Weather Icons</b></summary>
 
 <br>
 
@@ -1064,8 +1067,6 @@ chips:
 ```
 
 The card then resolves the icon by the current weather state. For example, `rainy` weather loads `/local/weather-icons/rainy.svg`.
-
-</details>
 
 <br>
 
