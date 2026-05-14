@@ -232,7 +232,7 @@ grid_options:
 <img width="400" alt="Image" src="https://github.com/user-attachments/assets/2baaac73-6f13-4803-8961-0665dcae7beb" />
 
 <details>
-<summary><b>Featuring Mini-graph</b></summary>
+<summary><b>Forecast & Mini-graph</b></summary>
 
 This example embeds a mini-graph-card with a bit of card-mod styling. For extra drama, the large header text is layered behind the weather elements.
 
@@ -396,7 +396,7 @@ custom_cards:
 <img width="400" alt="Image" src="https://github.com/user-attachments/assets/b060b527-5d48-42de-8541-16fc4883ce10" />
 
 <details>
-<summary><b>Circular Gauge Chip</b></summary>
+<summary><b>Forecast & Gauge Chip</b></summary>
 
 ```yaml
 type: custom:atmospheric-weather-card
