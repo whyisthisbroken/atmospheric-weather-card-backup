@@ -5,14 +5,12 @@ body:
     attributes:
       value: |
         > [!IMPORTANT]
-        > **Please make it easy for me to help you.** Provide your exact YAML and fill out this form directly. Do not submit AI-generated reports with long analyses.
+        > **Please make it easy for me to help you.** Provide your exact YAML and fill out this form directly. Do not submit AI-generated "Bug Analysis" reports here.
 
         <details>
         <summary><strong>⚠️ Is this a Feature Request?</strong></summary>
         <br>
-        I disabled the feature request form because keeping this massive codebase maintainable is my top priority. I am open to small, logical additions (like a new chip type). However, requests requiring big architectural changes (like adding a second sun for another time zone) will be closed. 
-        <br>
-        If your idea is solid and realistic, feel free to describe it below. Otherwise, please close this tab.
+        I disabled the feature request form because keeping this massive codebase maintainable is my top priority. I am open to small, logical additions (like a new chip type). However, requests requiring big architectural changes (like adding a second sun for another time zone) will be closed. If your idea is solid and realistic, feel free to describe it below. Otherwise, please close this tab.
         </details>
   - type: checkboxes
     id: troubleshooting
