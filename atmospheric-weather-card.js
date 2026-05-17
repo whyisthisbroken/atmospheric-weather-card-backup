@@ -1,6 +1,6 @@
 /**
  * ATMOSPHERIC WEATHER CARD
- * Version: 4.4
+ * Version: 4.5
  * https://github.com/shpongledsummer/atmospheric-weather-card
  */
 console.info(
@@ -271,6 +271,44 @@ function parseAnchor(anchor) {
     if (anchor === 'right') return ['center', 'right'];
     return anchor.includes('-') ? anchor.split('-') : ['top', anchor];
 }
+function computeGauge(rawVal, min, max, colorRaw, thresholds, mode) {
+    const range = max - min || 1;
+    const progress = isNaN(rawVal) ? 0 : Math.max(0, Math.min(1, (rawVal - min) / range));
+    const pct = (progress * 100).toFixed(1);
+    const baseColor = (colorRaw && colorRaw !== 'auto') ? colorRaw : '';
+    const valid = thresholds.filter(t => t.value !== '' && t.value !== undefined && t.color);
+    let gradient = '', barGradient = '', hasSegments = false, effectiveColor = baseColor;
+    if (valid.length && !isNaN(rawVal) && (mode === 'segments' || mode === 'gradient')) {
+        const sorted = [...valid].sort((a, b) => parseFloat(a.value) - parseFloat(b.value));
+        const toPct = (v) => (Math.max(0, Math.min(1, (parseFloat(v) - min) / range)) * 100).toFixed(1);
+        const stops = [], barStops = [];
+        for (let i = 0; i < sorted.length; i++) {
+            const t = sorted[i], startPct = toPct(t.value);
+            const endPct = i < sorted.length - 1 ? toPct(sorted[i + 1].value) : '100';
+            if (mode === 'segments') {
+                stops.push(`${t.color} ${startPct}%`, `${t.color} ${endPct}%`);
+                if (progress > 0) {
+                    const bStart = (parseFloat(startPct) / (progress * 100) * 100).toFixed(1);
+                    const bEnd = (parseFloat(endPct) / (progress * 100) * 100).toFixed(1);
+                    barStops.push(`${t.color} ${bStart}%`, `${t.color} ${bEnd}%`);
+                }
+            } else {
+                stops.push(`${t.color} ${startPct}%`);
+                if (progress > 0) {
+                    const bStart = (parseFloat(startPct) / (progress * 100) * 100).toFixed(1);
+                    barStops.push(`${t.color} ${bStart}%`);
+                }
+            }
+        }
+        if (stops.length) { hasSegments = true; gradient = stops.join(', '); }
+        if (barStops.length) { barGradient = barStops.join(', '); }
+    }
+    if (valid.length && !isNaN(rawVal) && mode === 'solid') {
+        const sorted = [...valid].sort((a, b) => parseFloat(a.value) - parseFloat(b.value));
+        for (const t of sorted) { if (rawVal >= parseFloat(t.value)) effectiveColor = t.color; }
+    }
+    return { pct, gradient, barGradient, hasSegments, effectiveColor };
+}
 // Forecast helpers
 const _fcCache = new Map(); // module-level: survives HA editor destroy/recreate cycles
 function fcFilterPast(raw, daily) {
@@ -385,13 +423,12 @@ const PERFORMANCE_CONFIG = Object.freeze({
     VISIBILITY_THRESHOLD: 0.01,
     REVEAL_TRANSITION_MS: 0,
     MAX_DPR: 2.0,
-    TARGET_FPS: 30,
     MAX_PIXELS: 2073600
 });
 const PERF_PRESETS = Object.freeze({
-    low:     { perf_fps: 20, perf_cloud_quality: 0.5, perf_effects: 0, perf_dpr: 1.0 },
-    default: { perf_fps: 30, perf_cloud_quality: 1.5, perf_effects: 1, perf_dpr: 2.0 },
-    ultra:   { perf_fps: 60, perf_cloud_quality: 2.0, perf_effects: 2, perf_dpr: 2.0 }
+    low:     { perf_cloud_quality: 0.5, perf_effects: 0, perf_fauna: 0, perf_dpr: 1.0 },
+    default: { perf_cloud_quality: 1.5, perf_effects: 1, perf_fauna: 2, perf_dpr: 2.0 },
+    ultra:   { perf_cloud_quality: 2.0, perf_effects: 2, perf_fauna: 2, perf_dpr: 2.0 }
 });
 const FILTER_PRESETS = Object.freeze({
     'darken':  'brightness(0.72) contrast(1.1)',
@@ -671,6 +708,11 @@ function _migrateConfig(raw) {
             r('disable_icon',      'hide_icon'); r('font_size',         'text_size'); r('name_font_size',    'label_size');
             r('behind',            'behind_effects');
             r('card_tap_action',   'tap_action');
+            if (s.forecast_show_min && s.forecast && s.attribute === 'temperature') {
+                if (!s.sub_value_attribute) s.sub_value_attribute = 'templow';
+                if (s.forecast_low_position !== 'below') s.sub_value_position = 'beside';
+            }
+            delete s.forecast_show_min; delete s.forecast_low_position;
             return s;
         });
     }
@@ -696,8 +738,8 @@ class AtmosphericWeatherCard extends HTMLElement {
         this._renderGate = { hasValidDimensions: false, hasFirstHass: false, isRevealed: false };
         this._resizeDebounceTimer = null; this._pendingResize = false; this._needsReinit = false;
         this._cachedDimensions = { width: 0, height: 0, dpr: 1 };
-        this._perfFps = PERFORMANCE_CONFIG.TARGET_FPS; this._perfCloudRes = CLOUD_ATLAS_SIZE_DEFAULT;
-        this._perfCloudQuality = 1.5; this._perfEffects = true; this._perfDpr = PERFORMANCE_CONFIG.MAX_DPR;
+        this._perfCloudRes = CLOUD_ATLAS_SIZE_DEFAULT;
+        this._perfCloudQuality = 1.5; this._perfEffects = true; this._perfFauna = 2; this._perfDpr = PERFORMANCE_CONFIG.MAX_DPR;
         this._lastInitWidth = 0; this._lastLocStr = null; this._lastSnapshot = null; this._prevStyleSig = this._prevPosSig = this._prevCcSig = null;
         this._entityErrors = new Map(); this._lastErrorLog = 0;
         this._customCardElements = []; this._hass = null; this._prevCustomCssClasses = null;
@@ -861,11 +903,12 @@ class AtmosphericWeatherCard extends HTMLElement {
             this._prevContainerBgColor = this._prevChipTextGap = null;
         this._nativeIconCache = null; this._prevHadVertVis = false; this._syncFc();
         const preset = PERF_PRESETS[config.perf_mode] || PERF_PRESETS.default;
-        this._perfFps = config.perf_fps != null ? config.perf_fps : preset.perf_fps;
         this._perfCloudQuality = config.perf_cloud_quality != null ? config.perf_cloud_quality : preset.perf_cloud_quality;
         this._perfCloudRes = this._perfCloudQuality <= 1.0 ? 1024 : CLOUD_ATLAS_SIZE_DEFAULT;
         const rawEffects = config.perf_effects != null ? config.perf_effects : preset.perf_effects;
         this._perfEffects = (rawEffects === true) ? 2 : (rawEffects === false) ? 0 : (parseInt(rawEffects, 10) || 0);
+        const rawFauna = config.perf_fauna != null ? config.perf_fauna : preset.perf_fauna;
+        this._perfFauna = (rawFauna === true) ? 2 : (rawFauna === false) ? 0 : (parseInt(rawFauna, 10) || 0);
         this._perfDpr = config.perf_dpr != null ? config.perf_dpr : preset.perf_dpr;
         this._applyConfigStyles();
     }
@@ -886,6 +929,7 @@ class AtmosphericWeatherCard extends HTMLElement {
                 for (const s of this._chips) {
                     if (s.entity && hass.states[s.entity] !== (this._refChipEnts ? this._refChipEnts.get(s.entity) : undefined)) { changed = true; break; }
                     if (s.name_sensor && hass.states[s.name_sensor] !== (this._refChipEnts ? this._refChipEnts.get(s.name_sensor) : undefined)) { changed = true; break; }
+                    if (s.sub_value_entity && hass.states[s.sub_value_entity] !== (this._refChipEnts ? this._refChipEnts.get(s.sub_value_entity) : undefined)) { changed = true; break; }
                 }
             }
             if (!changed) return;
@@ -895,6 +939,7 @@ class AtmosphericWeatherCard extends HTMLElement {
         for (const s of this._chips) {
             if (s.entity) refs.set(s.entity, hass.states[s.entity]);
             if (s.name_sensor) refs.set(s.name_sensor, hass.states[s.name_sensor]);
+            if (s.sub_value_entity) refs.set(s.sub_value_entity, hass.states[s.sub_value_entity]);
         }
         this._refChipEnts = refs;
         if (this._moonRotationRad === undefined && (hass.config && hass.config.latitude) !== undefined) { this._moonRotationRad = (51 - hass.config.latitude) * (Math.PI / 180); }
@@ -916,6 +961,10 @@ class AtmosphericWeatherCard extends HTMLElement {
             if (s.name_sensor) {
                 const ns = hass.states[s.name_sensor];
                 if (ns) sig += `|ns:${s.name_attribute ? (ns.attributes[s.name_attribute] != null ? ns.attributes[s.name_attribute] : '') : ns.state}`;
+            }
+            if (s.sub_value_entity) {
+                const sv = hass.states[s.sub_value_entity];
+                if (sv) sig += `|sv:${s.sub_value_attribute ? (sv.attributes[s.sub_value_attribute] != null ? sv.attributes[s.sub_value_attribute] : '') : sv.state}`;
             }
             return sig;
         }).join('||');
@@ -970,7 +1019,7 @@ class AtmosphericWeatherCard extends HTMLElement {
     }
     static async getConfigElement() {
         if (!customElements.get("atmospheric-weather-card-editor")) 
-        { await import("./atmospheric-weather-card-editor.js?v=2026-05-13"); }
+        { await import("./atmospheric-weather-card-editor.js?v=2026-05-17"); }
         return document.createElement("atmospheric-weather-card-editor");
     }
     static getStubConfig(hass) {
@@ -1088,6 +1137,28 @@ class AtmosphericWeatherCard extends HTMLElement {
             const isNumeric = value !== null && value !== '' && !isNaN(parseFloat(value)) && isFinite(value);
             if (isNumeric && this._numFmt) formatted = this._numFmt.format(value);
         }
+        const isoSource = attribute
+            ? (sensor && sensor.attributes && sensor.attributes[attribute])
+            : (sensor && sensor.state);
+        if (typeof isoSource === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(isoSource)) {
+            const d = new Date(isoSource);
+            if (!isNaN(d)) {
+                const locale = (hass.locale && hass.locale.language) || undefined;
+                const now = new Date();
+                const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const targetStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                const dayDiff = Math.round((targetStart - todayStart) / 86400000);
+                const timePart = d.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' });
+                if (dayDiff === 0) {
+                    formatted = timePart;
+                } else if (dayDiff >= -1 && dayDiff <= 6) {
+                    formatted = `${d.toLocaleDateString(locale, { weekday: 'short' })}, ${timePart}`;
+                } else {
+                    formatted = d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
+                }
+                haFormatted = true;
+            }
+        }
         return { formatted, unit, sensor, haFormatted, rawNumeric };
     }
     // FORECAST DATA LAYER
@@ -1134,10 +1205,10 @@ class AtmosphericWeatherCard extends HTMLElement {
         if (!attr || attr === 'condition') {
             let label = entry.condition || '—';
             if (entry.condition && typeof hass.localize === 'function') label = hass.localize(`component.weather.entity_component._.state.${entry.condition}`) || label;
-            return { formatted: label, unit: '', condition: entry.condition, datetime: entry.datetime };
+            return { formatted: label, unit: '', condition: entry.condition, datetime: entry.datetime, entry };
         }
         const raw = entry[attr];
-        if (raw == null) return { formatted: 'N/A', unit: '', condition: entry.condition, datetime: entry.datetime };
+        if (raw == null) return { formatted: 'N/A', unit: '', condition: entry.condition, datetime: entry.datetime, entry };
         const _chipState = hass.states[chip.entity];
         const w = _chipState && _chipState.attributes;
         const unit = (w && w[`${attr}_unit`]) || (_FC_UNIT_MAP[attr] && w && w[_FC_UNIT_MAP[attr]]) || _FC_UNIT_FALLBACK[attr] || '';
@@ -1149,21 +1220,7 @@ class AtmosphericWeatherCard extends HTMLElement {
                 : this._numFmt;
             if (fmt) formatted = fmt.format(raw);
         }
-        if (chip.forecast_show_min && attr === 'temperature' && entry.templow != null) {
-            const lowRaw = entry.templow; let lowFmt = lowRaw;
-            if (lowRaw !== '' && !isNaN(parseFloat(lowRaw)) && isFinite(lowRaw)) {
-                const precision = chip.forecast_precision;
-                const fmt = (precision !== undefined && precision !== null)
-                    ? this._getFcFmt(lang, precision)
-                    : this._numFmt;
-                if (fmt) lowFmt = fmt.format(lowRaw);
-            }
-            if (chip.forecast_low_position === 'below') {
-                return { formatted, unit, condition: entry.condition, datetime: entry.datetime, templow: lowFmt };
-            }
-            formatted = `${lowFmt} – ${formatted}`;
-        }
-        return { formatted, unit, condition: entry.condition, datetime: entry.datetime };
+        return { formatted, unit, condition: entry.condition, datetime: entry.datetime, entry };
     }
     _getFcFmt(lang, precision) {
         const key = `${lang}|${precision}`;
@@ -1487,13 +1544,13 @@ class AtmosphericWeatherCard extends HTMLElement {
             #chips-group { position: absolute; pointer-events: none; font-family: var(--ha-font-family, var(--paper-font-body1_-_font-family, sans-serif)); transition: color 0.3s ease, text-shadow 0.3s ease; min-width: 0; max-width: calc(100% - var(--_awc-pad-h, var(--awc-card-padding, 16px)) * 2); box-sizing: border-box; }
             #chips-row,
             .chip-free { color: var(--awc-text-color); }
-            .chip-val-low { display: block; font-size: 0.78em; opacity: 0.65; font-weight: 500; line-height: 1.2; white-space: nowrap; }
+            .chip-sub { display: block; font-size: var(--awc-sub-size, 0.78em); opacity: 0.65; font-weight: var(--awc-sub-weight, 500); line-height: 1.2; white-space: var(--awc-sub-wrap, nowrap); overflow: var(--awc-sub-visible, hidden); text-overflow: var(--awc-sub-overflow, ellipsis); }
             .chip-val .fancy-unit { font-size: 0.55em; font-weight: 500; opacity: 0.85; vertical-align: baseline; position: relative; top: -0.45em; margin-left: 3px; }
-            .chip.has-val-low:not(.format-stacked):not(.format-vertical) { align-items: flex-start; }
-            .chip.has-val-low:not(.format-stacked):not(.format-vertical) .chip-icon { align-self: center; }
-            .chip.has-val-low:not(.format-stacked):not(.format-vertical) .chip-val { display: flex; flex-direction: column; }
-            .chip.has-val-low.format-stacked .chip-val,
-            .chip.has-val-low.format-vertical .chip-val { white-space: normal; overflow: visible; }
+            .chip.has-sub:not(.format-stacked):not(.format-vertical) { align-items: flex-start; }
+            .chip.has-sub:not(.format-stacked):not(.format-vertical) .chip-icon { align-self: center; }
+            .chip.has-sub:not(.format-stacked):not(.format-vertical) .chip-val { display: flex; flex-direction: column; }
+            .chip.has-sub.format-stacked .chip-val,
+            .chip.has-sub.format-vertical .chip-val { white-space: normal; overflow: visible; }
             #chips-group { pointer-events: auto; width: var(--awc-row-width, auto); box-sizing: border-box; padding: var(--awc-container-padding, 0); max-height: calc(100% - var(--_awc-pad-v, var(--awc-card-padding, 16px)) * 2); }
             #chips-group.has-row-wrap { --_pad-h: var(--_awc-pad-h, var(--awc-card-padding, 16px)); width: var(--awc-row-width, auto); }
             #chips-group.has-row-wrap.pos-top-left,
@@ -1615,7 +1672,6 @@ class AtmosphericWeatherCard extends HTMLElement {
             .chip .chip-val,
             .chip .chip-name { text-shadow: var(--_chip-no-bg-shadow, 0 1px 2px rgba(0, 0, 0, 0.35)); }
             .chip.overflow-clip .chip-val { text-overflow: clip; }
-            .chip.overflow-wrap { white-space: normal; }
             .chip.overflow-wrap .chip-val { white-space: normal; overflow: visible; text-overflow: clip; }
             .chip.overflow-wrap:not(.format-stacked):not(.format-vertical) .chip-val { display: inline; }
             .chip.with-bg { --_bg: var(--awc-bottom-bg-color, var(--_text-bg)); padding: var(--awc-chips-padding, 5px 10px); border-radius: var(--awc-bottom-bg-radius, calc(var(--awc-card-border-radius, var(--ha-card-border-radius, 12px)) - 5px)); align-items: center; }
@@ -1638,8 +1694,8 @@ class AtmosphericWeatherCard extends HTMLElement {
             .chip.format-vertical .chip-name { grid-area: name; max-width: 100%; font-size: var(--awc-chip-name-font-size, var(--awc-stacked-name-size, 0.85em)); font-weight: var(--awc-chip-name-weight, 500); opacity: var(--awc-stacked-name-opacity, 0.6); color: var(--awc-stacked-name-color, inherit); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; }
             .chip.format-stacked .chip-name:empty,
             .chip.format-vertical .chip-name:empty { display: none; }
-            .chip.format-stacked .chip-name:empty + .chip-val,
-            .chip.format-vertical .chip-name:empty + .chip-val { grid-row: 1 / -1; align-self: center; }
+            .chip.format-stacked:not(.chip-bar-type) .chip-name:empty + .chip-val,
+            .chip.format-vertical:not(.chip-bar-type) .chip-name:empty + .chip-val { grid-row: 1 / -1; align-self: center; }
             .chip.format-stacked.empty-name .chip-icon,
             .chip.format-vertical.empty-name .chip-icon { background: none; border: none; box-shadow: none; aspect-ratio: unset; align-self: center; }
             .chip.format-stacked .chip-val,
@@ -1705,16 +1761,29 @@ class AtmosphericWeatherCard extends HTMLElement {
             .chip.chip-ring.format-vertical .chip-name { margin-bottom: var(--awc-chip-text-gap, 2px); }
             .chip-ring-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; scroll-snap-align: start; }
             .chip-ring-wrap::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--awc-ring-gradient, conic-gradient(var(--awc-ring-color, var(--primary-color, #03a9f4)) var(--awc-ring-pct, 0%), transparent 0)); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--awc-ring-w, 4px) - 0.5px), #000 calc(100% - var(--awc-ring-w, 4px))); mask: radial-gradient(farthest-side, transparent calc(100% - var(--awc-ring-w, 4px) - 0.5px), #000 calc(100% - var(--awc-ring-w, 4px))); transition: --awc-ring-pct 0.6s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; z-index: 0; }
+            .chip-ring-wrap.has-segments::before { -webkit-mask: conic-gradient(#000 var(--awc-ring-pct, 0%), transparent 0), radial-gradient(farthest-side, transparent calc(100% - var(--awc-ring-w, 4px) - 0.5px), #000 calc(100% - var(--awc-ring-w, 4px))); mask: conic-gradient(#000 var(--awc-ring-pct, 0%), transparent 0), radial-gradient(farthest-side, transparent calc(100% - var(--awc-ring-w, 4px) - 0.5px), #000 calc(100% - var(--awc-ring-w, 4px))); -webkit-mask-composite: source-in; mask-composite: intersect; }
             .chip-ring-track { position: absolute; inset: 0; border-radius: 50%; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--awc-ring-w, 4px) - 0.5px), #000 calc(100% - var(--awc-ring-w, 4px))); mask: radial-gradient(farthest-side, transparent calc(100% - var(--awc-ring-w, 4px) - 0.5px), #000 calc(100% - var(--awc-ring-w, 4px))); background: currentColor; opacity: 0.10; pointer-events: none; }
             .chip-ring-wrap > .chip { margin: var(--awc-ring-gap, 3px); z-index: 1; }
             #chips-row.row-grid > .chip-ring-wrap > .chip,
             #chips-row.full-width > .chip-ring-wrap > .chip,
             #chips-row.has-visible-count > .chip-ring-wrap > .chip { width: calc(100% - var(--awc-ring-gap, 3px) * 2); }
             #chips-row.row-grid > .chip-ring-wrap { aspect-ratio: 1; }
+            .chip-bar { --_bar-radius: calc(var(--awc-card-border-radius, var(--ha-card-border-radius, 12px)) * 0.35); position: relative; width: 100%; height: var(--awc-bar-h, 4px); border-radius: var(--_bar-radius); overflow: hidden; margin-top: var(--awc-bar-gap, 4px); flex-shrink: 0; }
+            .chip-bar-track { position: absolute; inset: 0; border-radius: inherit; background: currentColor; opacity: 0.10; }
+            .chip-bar-fill { position: absolute; inset: 0; border-radius: inherit; background: var(--awc-bar-gradient, var(--awc-bar-color, var(--primary-color, #03a9f4))); transform-origin: left center; transform: scaleX(var(--awc-bar-scale, 0)); transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+            .chip.chip-bar-type { flex-wrap: wrap; }
+            .chip.chip-bar-type.format-stacked { grid-template: "icon name" auto "icon value" auto "bar bar" auto / auto 1fr; }
+            .chip.chip-bar-type.format-stacked .chip-bar { grid-area: bar; }
+            .chip.chip-bar-type.format-stacked.no-icon { grid-template: "name" auto "value" auto "bar" auto / 1fr; }
+            .chip.chip-bar-type.format-vertical { grid-template: "icon" auto "name" auto "value" auto "bar" auto / 1fr; }
+            .chip.chip-bar-type.format-vertical .chip-bar { grid-area: bar; justify-self: stretch; }
             .chip.chip-loading { position: relative; }
             .chip.chip-loading .chip-icon,
             .chip.chip-loading .chip-name,
-            .chip.chip-loading .chip-val { visibility: hidden; }
+            .chip.chip-loading .chip-val,
+            .chip.chip-loading .chip-bar { visibility: hidden; }
+            .chip-ring-wrap.chip-loading .chip-ring-track,
+            .chip-ring-wrap.chip-loading::before { visibility: hidden; }
             .chip-loader { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 5px; pointer-events: none; }
             .chip-loader span { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.2; animation: awc-dot-pulse 1.2s ease-in-out infinite; }
             .chip-loader span:nth-child(2) { animation-delay: 0.2s; }
@@ -1732,6 +1801,8 @@ class AtmosphericWeatherCard extends HTMLElement {
             .chip.marquee-both .chip-val { flex: 1 1 auto; min-width: 0; }
             .chip .chip-val.awc-marquee-host.is-animating { -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--awc-marquee-fade, 12px), #000 calc(100% - var(--awc-marquee-fade, 12px)), transparent 100%); mask-image: linear-gradient(to right, transparent 0, #000 var(--awc-marquee-fade, 12px), #000 calc(100% - var(--awc-marquee-fade, 12px)), transparent 100%); }
             .chip .chip-name.awc-marquee-host.is-animating { -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--awc-marquee-fade, 12px), #000 calc(100% - var(--awc-marquee-fade, 12px)), transparent 100%); mask-image: linear-gradient(to right, transparent 0, #000 var(--awc-marquee-fade, 12px), #000 calc(100% - var(--awc-marquee-fade, 12px)), transparent 100%); }
+            .chip-sub.awc-marquee-host { overflow: hidden; text-overflow: clip; contain: layout style; }
+            .chip-sub.awc-marquee-host.is-animating { -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--awc-marquee-fade, 12px), #000 calc(100% - var(--awc-marquee-fade, 12px)), transparent 100%); mask-image: linear-gradient(to right, transparent 0, #000 var(--awc-marquee-fade, 12px), #000 calc(100% - var(--awc-marquee-fade, 12px)), transparent 100%); }
             .awc-marquee-track { display: inline-block; white-space: nowrap; }
             .awc-marquee-text { display: inline; }
             .awc-marquee-sep { display: inline-block; padding: 0 var(--awc-marquee-sep-gap, 0.4em); opacity: 0.5; }
@@ -2038,10 +2109,16 @@ class AtmosphericWeatherCard extends HTMLElement {
             const key = pfx + wrap.dataset.idx;
             const target = (wrap.style.getPropertyValue('--awc-ring-pct') || '0%').trim();
             const prev = this._ringPrevPct.get(key);
-            if (prev !== undefined) {
-                wrap.style.setProperty('--awc-ring-pct', prev);
-                requestAnimationFrame(() => { wrap.style.setProperty('--awc-ring-pct', target); });
-            }
+            wrap.style.setProperty('--awc-ring-pct', prev !== undefined ? prev : '0%');
+            requestAnimationFrame(() => { wrap.style.setProperty('--awc-ring-pct', target); });
+            this._ringPrevPct.set(key, target);
+        }
+        for (const fill of container.querySelectorAll('.chip-bar-fill')) {
+            const key = 'b' + pfx + fill.dataset.barIdx;
+            const target = (fill.style.getPropertyValue('--awc-bar-scale') || '0').trim();
+            const prev = this._ringPrevPct.get(key);
+            fill.style.setProperty('--awc-bar-scale', prev !== undefined ? prev : '0');
+            requestAnimationFrame(() => { fill.style.setProperty('--awc-bar-scale', target); });
             this._ringPrevPct.set(key, target);
         }
     }
@@ -2052,14 +2129,13 @@ class AtmosphericWeatherCard extends HTMLElement {
         const isEnhanced = effectiveFormat === 'stacked' || effectiveFormat === 'vertical';
         const isRingType = chip.type === 'ring';
         let sensorObj = null, iconStrategy = 'static', iconValue = 'mdi:information-outline', formatted, unit;
-        const isForecast = !!chip.forecast; let fcCondition = null, fcDatetime = null, fcLoading = false;
+        const isForecast = !!chip.forecast; let fcCondition = null, fcDatetime = null, fcLoading = false, fcEntry = null;
         if (isForecast) {
             const fc = this._resolveFcValue(hass, chip, lang);
             formatted = fc.formatted; unit = fc.unit; fcCondition = fc.condition; fcDatetime = fc.datetime;
-            fcLoading = !!fc.loading;
+            fcLoading = !!fc.loading; fcEntry = fc.entry || null;
             iconValue = fcCondition ? (WEATHER_ICONS[fcCondition] || WEATHER_ICONS['default']) : iconValue;
             if (chip.attribute && chip.attribute !== 'condition') iconValue = FORECAST_ATTR_ICONS[chip.attribute] || iconValue;
-            if (fc.templow !== undefined) { var _fcTemplow = fc.templow; }
         } else {
             const resolved = this._resolveSensorValue(hass, chip.entity, chip.attribute);
             formatted = resolved.formatted; unit = resolved.unit;
@@ -2088,7 +2164,9 @@ class AtmosphericWeatherCard extends HTMLElement {
         const overflowMode = (chip.overflow || 'ellipsis').toString().toLowerCase().trim();
         const labelOverflow = (chip.label_overflow || 'ellipsis').toString().toLowerCase().trim();
         const isValueMarquee = overflowMode === 'marquee', isLabelMarquee = labelOverflow === 'marquee';
-        const hasAnyMarquee = isValueMarquee || isLabelMarquee;
+        const subOverflow = (chip.sub_value_overflow || 'ellipsis').toString().toLowerCase().trim();
+        const isSubMarquee = subOverflow === 'marquee';
+        const hasAnyMarquee = isValueMarquee || isLabelMarquee || isSubMarquee;
         const marqueeSpeed = Math.max(5, parseFloat(chip.marquee_speed) || 30);
         const marqueeRtl = chip.marquee_rtl === true, width = (chip.width || '').toString().trim(), height = (chip.height || '').toString().trim();
         let name = (chip.name || '').toString().trim(), nameSig = name;
@@ -2101,7 +2179,50 @@ class AtmosphericWeatherCard extends HTMLElement {
             const nameUnit = nameResolved.unit;
             name = nameUnit ? `${nameResolved.formatted} ${nameUnit}` : `${nameResolved.formatted}`;
             nameSig = `ns:${chip.name_sensor}|${chip.name_attribute || ''}|${name}`;
+        } else if (isForecast && chip.name_attribute && fcEntry) {
+            const nRaw = fcEntry[chip.name_attribute];
+            if (nRaw != null) {
+                if (nRaw !== '' && !isNaN(parseFloat(nRaw)) && isFinite(nRaw)) {
+                    const _cs = hass.states[chip.entity], _w = _cs && _cs.attributes;
+                    const nUnit = (_w && _w[`${chip.name_attribute}_unit`]) || (_FC_UNIT_MAP[chip.name_attribute] && _w && _w[_FC_UNIT_MAP[chip.name_attribute]]) || _FC_UNIT_FALLBACK[chip.name_attribute] || '';
+                    const nFmt = this._numFmt ? this._numFmt.format(nRaw) : String(nRaw);
+                    name = nUnit ? `${nFmt} ${nUnit}` : `${nFmt}`;
+                } else { name = String(nRaw); }
+                nameSig = `ns-fc:${chip.name_attribute}|${name}`;
+            }
         }
+        const showSubValue = chip.hide_sub_value !== true && (chip.sub_value_entity || chip.sub_value_attribute);
+        let subValue = '', subValueSig = '';
+        if (showSubValue) {
+            const hasSubFormat = chip.sub_value_format !== undefined;
+            if (chip.sub_value_entity) {
+                const svResolved = this._resolveSensorValue(hass, chip.sub_value_entity, chip.sub_value_attribute);
+                const svUnit = hasSubFormat ? chip.sub_value_format : svResolved.unit;
+                subValue = hasSubFormat ? `${svResolved.formatted}${svUnit}` : (svUnit ? `${svResolved.formatted} ${svUnit}` : `${svResolved.formatted}`);
+                subValueSig = `sv:${chip.sub_value_entity}|${chip.sub_value_attribute || ''}|${subValue}`;
+            } else if (isForecast && chip.sub_value_attribute && fcEntry) {
+                const svRaw = fcEntry[chip.sub_value_attribute];
+                if (svRaw != null) {
+                    let svFmt = svRaw;
+                    if (svRaw !== '' && !isNaN(parseFloat(svRaw)) && isFinite(svRaw)) {
+                        const precision = chip.forecast_precision;
+                        const fmt = (precision !== undefined && precision !== null)
+                            ? this._getFcFmt(lang, precision) : this._numFmt;
+                        if (fmt) svFmt = fmt.format(svRaw);
+                    }
+                    if (hasSubFormat) {
+                        subValue = `${svFmt}${chip.sub_value_format}`;
+                    } else {
+                        const _chipState = hass.states[chip.entity];
+                        const w = _chipState && _chipState.attributes;
+                        const svUnit = (w && w[`${chip.sub_value_attribute}_unit`]) || (_FC_UNIT_MAP[chip.sub_value_attribute] && w && w[_FC_UNIT_MAP[chip.sub_value_attribute]]) || _FC_UNIT_FALLBACK[chip.sub_value_attribute] || '';
+                        subValue = svUnit ? `${svFmt} ${svUnit}` : `${svFmt}`;
+                    }
+                    subValueSig = `sv-fc:${chip.sub_value_attribute}|${subValue}`;
+                }
+            }
+        }
+        const subValueBeside = chip.sub_value_position === 'beside';
         let iconHtml = '';
         if (showIcon) {
             let inner;
@@ -2121,19 +2242,31 @@ class AtmosphericWeatherCard extends HTMLElement {
             : '';
         const useFancyUnit = !isForecast && chip.fancy_unit === true && (!chip.attribute || chip.attribute === 'temperature'); let inner;
         if (useFancyUnit) {
-            const sensor = hass.states[chip.entity], rawTemp = sensor && sensor.attributes && sensor.attributes.temperature, rawUnit = (sensor && sensor.attributes && sensor.attributes.temperature_unit) || '';
+            const sensor = hass.states[chip.entity];
+            const isWeather = sensor && sensor.attributes && sensor.attributes.temperature !== undefined;
+            const rawTemp = isWeather ? sensor.attributes.temperature : (sensor && sensor.state);
+            const rawUnit = isWeather ? (sensor.attributes.temperature_unit || '') : (sensor && sensor.attributes && sensor.attributes.unit_of_measurement || '');
             const fancyVal = (rawTemp != null && this._numFmt) ? this._numFmt.format(rawTemp) : (rawTemp != null ? rawTemp : formatted);
             const fancyUnitStr = hasUnitFormat ? unit : rawUnit;
             inner = `${fancyVal}<span class="fancy-unit">${fancyUnitStr}</span>`;
         } else {
             inner = hasUnitFormat ? `${formatted}${unit}` : (unit ? `${formatted} ${unit}` : `${formatted}`);
         }
-        const lowInner = (_fcTemplow !== undefined) ? (hasUnitFormat ? `${_fcTemplow}${unit}` : (unit ? `${_fcTemplow} ${unit}` : `${_fcTemplow}`)) : '';
-        const lowBelowHtml = showValue && lowInner ? `<span class="chip-val-low">${lowInner}</span>` : '';
+        if (subValue && subValueBeside) {
+            inner = `${subValue} – ${inner}`;
+        }
+        let subBelowHtml = '';
+        if (showValue && subValue && !subValueBeside) {
+            if (isSubMarquee) {
+                subBelowHtml = `<span class="chip-sub awc-marquee-host" data-speed="${marqueeSpeed}" data-rtl="${marqueeRtl ? 1 : 0}"><span class="awc-marquee-track"><span class="awc-marquee-text">${subValue}</span></span></span>`;
+            } else {
+                subBelowHtml = `<span class="chip-sub">${subValue}</span>`;
+            }
+        }
         const valHtml = !showValue ? ''
             : isValueMarquee
             ? `<span class="chip-val awc-marquee-host" data-speed="${marqueeSpeed}" data-rtl="${marqueeRtl ? 1 : 0}"><span class="awc-marquee-track"><span class="awc-marquee-text">${inner}</span></span></span>`
-            : `<span class="chip-val">${inner}${lowBelowHtml}</span>`;
+            : `<span class="chip-val">${inner}${subBelowHtml}</span>`;
         const isFree = (chip.position || '').toString().toLowerCase() === 'custom';
         const posAnchor = isFree ? (chip.position_anchor || 'top-left') : '', posX = isFree ? String(chip.position_x || 0).trim() : '0';
         const posY = isFree ? String(chip.position_y || 0).trim() : '0';
@@ -2142,10 +2275,10 @@ class AtmosphericWeatherCard extends HTMLElement {
         if (hasAnyMarquee) {
             classes.push('overflow-marquee'); if (isLabelMarquee && isValueMarquee) classes.push('marquee-both');
             else if (isLabelMarquee) classes.push('marquee-label');
-            else classes.push('marquee-value');
+            else if (isValueMarquee) classes.push('marquee-value');
         }
         if (fcLoading) classes.push('chip-loading');
-        if (_fcTemplow !== undefined && showValue) classes.push('has-val-low');
+        if (subValue && !subValueBeside && showValue) classes.push('has-sub');
         if (!showIcon) classes.push('no-icon');
         if (!nameHtml) classes.push('no-name');
         else if (isEnhanced && !name) classes.push('empty-name');
@@ -2177,53 +2310,44 @@ class AtmosphericWeatherCard extends HTMLElement {
         if (chip.icon_size) inlineStyles.push(`--awc-icon-size:${chip.icon_size}`);
         if (chip.icon_padding) inlineStyles.push(`--awc-icon-padding:${chip.icon_padding}`);
         if (chip.value_weight) inlineStyles.push(`--awc-chip-value-weight:${chip.value_weight};--awc-stacked-value-weight:${chip.value_weight}`);
-        let ringHtml = '', ringWrapStyle = '';
+        if (chip.label_weight) inlineStyles.push(`--awc-chip-name-weight:${chip.label_weight}`);
+        if (chip.sub_value_size) inlineStyles.push(`--awc-sub-size:${chip.sub_value_size}`);
+        if (chip.sub_value_weight) inlineStyles.push(`--awc-sub-weight:${chip.sub_value_weight}`);
+        if (subOverflow === 'clip') inlineStyles.push('--awc-sub-overflow:clip');
+        else if (subOverflow === 'wrap') inlineStyles.push('--awc-sub-overflow:clip;--awc-sub-wrap:normal;--awc-sub-visible:visible');
+        const isBarType = chip.type === 'bar';
+        let gaugeVal = parseFloat(formatted), gaugeSig = '';
+        if ((isRingType || isBarType) && chip.gauge_entity) {
+            const gr = this._resolveSensorValue(hass, chip.gauge_entity, chip.gauge_attribute);
+            gaugeVal = parseFloat(gr.rawNumeric != null ? gr.rawNumeric : gr.formatted);
+            gaugeSig = `${chip.gauge_entity}|${chip.gauge_attribute || ''}|${gaugeVal}`;
+        } else if ((isRingType || isBarType) && !chip.gauge_entity && isForecast && chip.gauge_attribute && fcEntry) {
+            const gRaw = fcEntry[chip.gauge_attribute];
+            if (gRaw != null) gaugeVal = parseFloat(gRaw);
+            gaugeSig = `fc-g:${chip.gauge_attribute}|${gaugeVal}`;
+        }
+        let ringHtml = '', ringWrapStyle = '', hasSegments = false, barHtml = '';
         if (isRingType) {
             const ringMin = parseFloat(chip.ring_min) || 0, ringMax = parseFloat(chip.ring_max) || 100;
-            const ringW = parseFloat(chip.ring_width) || 4;
-            const ringColorRaw = (chip.ring_color || '').trim();
-            const ringGap = parseFloat(chip.ring_gap) || 3;
-            const rawVal = parseFloat(formatted);
-            const range = ringMax - ringMin || 1;
-            const progress = isNaN(rawVal) ? 0 : Math.max(0, Math.min(1, (rawVal - ringMin) / range));
-            const pct = (progress * 100).toFixed(1);
-            const baseColor = (ringColorRaw && ringColorRaw !== 'auto') ? ringColorRaw : '';
-            const thresholds = Array.isArray(chip.ring_thresholds) ? chip.ring_thresholds.filter(t => t.value !== '' && t.value !== undefined && t.color) : [];
-            const mode = chip.ring_threshold_mode || 'solid';
-            let gradientProp = '';
-            if (thresholds.length && !isNaN(rawVal) && (mode === 'segments' || mode === 'gradient')) {
-                const sorted = [...thresholds].sort((a, b) => parseFloat(a.value) - parseFloat(b.value));
-                const stops = [];
-                const toPct = (v) => (Math.max(0, Math.min(1, (parseFloat(v) - ringMin) / range)) * 100).toFixed(1);
-                const fillPct = parseFloat(pct);
-                for (let i = 0; i < sorted.length; i++) {
-                    const t = sorted[i];
-                    const startPct = parseFloat(toPct(t.value));
-                    const endPct = i < sorted.length - 1 ? parseFloat(toPct(sorted[i + 1].value)) : fillPct;
-                    const segEnd = Math.min(endPct, fillPct);
-                    if (startPct >= fillPct) break;
-                    if (mode === 'segments') {
-                        stops.push(`${t.color} ${startPct}%`);
-                        stops.push(`${t.color} ${segEnd}%`);
-                    } else {
-                        stops.push(`${t.color} ${startPct}%`);
-                    }
-                }
-                if (stops.length) {
-                    stops.push(`transparent ${pct}%`);
-                    gradientProp = `conic-gradient(${stops.join(', ')})`;
-                }
-            }
-            let effectiveRingColor = baseColor;
-            if (thresholds.length && !isNaN(rawVal) && mode === 'solid') {
-                const sorted = [...thresholds].sort((a, b) => parseFloat(a.value) - parseFloat(b.value));
-                for (const t of sorted) { if (rawVal >= parseFloat(t.value)) effectiveRingColor = t.color; }
-            }
+            const ringW = parseFloat(chip.ring_width) || 4, ringGap = parseFloat(chip.ring_gap) || 3;
+            const g = computeGauge(gaugeVal, ringMin, ringMax, (chip.ring_color || '').trim(), Array.isArray(chip.ring_thresholds) ? chip.ring_thresholds : [], chip.ring_threshold_mode || 'solid');
+            hasSegments = g.hasSegments;
             ringHtml = '<div class="chip-ring-track"></div>';
-            const styleParts = [`--awc-ring-pct:${pct}%`, `--awc-ring-w:${ringW}px`, `--awc-ring-gap:${ringGap}px`];
-            if (gradientProp) styleParts.push(`--awc-ring-gradient:${gradientProp}`);
-            else if (effectiveRingColor) styleParts.push(`--awc-ring-color:${effectiveRingColor}`);
+            const styleParts = [`--awc-ring-pct:${g.pct}%`, `--awc-ring-w:${ringW}px`, `--awc-ring-gap:${ringGap}px`];
+            if (g.gradient) styleParts.push(`--awc-ring-gradient:conic-gradient(${g.gradient})`);
+            else if (g.effectiveColor) styleParts.push(`--awc-ring-color:${g.effectiveColor}`);
             ringWrapStyle = styleParts.join(';');
+        }
+        if (isBarType) {
+            const barMin = parseFloat(chip.bar_min) || 0, barMax = parseFloat(chip.bar_max) || 100;
+            const barH = parseFloat(chip.bar_height) || 4, barGap = parseFloat(chip.bar_gap) || 4;
+            const g = computeGauge(gaugeVal, barMin, barMax, (chip.bar_color || '').trim(), Array.isArray(chip.bar_thresholds) ? chip.bar_thresholds : [], chip.bar_threshold_mode || 'solid');
+            classes.push('chip-bar-type');
+            const scale = (parseFloat(g.pct) / 100).toFixed(4);
+            const fillStyles = [`--awc-bar-scale:${scale}`];
+            if (g.barGradient) fillStyles.push(`--awc-bar-gradient:linear-gradient(to right, ${g.barGradient})`);
+            else if (g.effectiveColor) fillStyles.push(`--awc-bar-color:${g.effectiveColor}`);
+            barHtml = `<div class="chip-bar" style="--awc-bar-h:${barH}px;--awc-bar-gap:${barGap}px"><div class="chip-bar-track"></div><div class="chip-bar-fill" data-bar-idx="${idx}" style="${fillStyles.join(';')}"></div></div>`;
         }
         const chipAlignClass = chip.align || '';
         if (chipAlignClass) classes.push(`align-${chipAlignClass}`);
@@ -2231,11 +2355,11 @@ class AtmosphericWeatherCard extends HTMLElement {
         if (chip.chip_round === true) classes.push('chip-round');
         const style = inlineStyles.length ? ` style="${inlineStyles.join(';')}"` : '';
         const loaderHtml = fcLoading ? '<div class="chip-loader"><span></span><span></span><span></span></div>' : '';
-        let chipHtml = `<div class="${classes.join(' ')}" data-idx="${idx}"${style}>${loaderHtml}${iconHtml}${nameHtml}${valHtml}</div>`;
+        let chipHtml = `<div class="${classes.join(' ')}" data-idx="${idx}"${style}>${loaderHtml}${iconHtml}${nameHtml}${valHtml}${barHtml}</div>`;
         if (isRingType) {
-            chipHtml = `<div class="chip-ring-wrap" data-idx="${idx}" style="${ringWrapStyle}">${ringHtml}${chipHtml}</div>`;
+            chipHtml = `<div class="chip-ring-wrap${hasSegments ? ' has-segments' : ''}${fcLoading ? ' chip-loading' : ''}" data-idx="${idx}" style="${ringWrapStyle}">${ringHtml}${chipHtml}</div>`;
         }
-        const sig = `${idx}|${formatted}|${unit}|${iconValue}|${iconStrategy}|${showIcon}|${showLabel}|${showValue}|${overflowMode}|${labelOverflow}|${marqueeSpeed}|${marqueeRtl}|${width}|${height}|${nameSig}|${effectiveBg}|${bgStyle}|${effectiveFormat}|${iconBg != null ? iconBg : ''}|${isFree}|${posAnchor}|${posX}|${posY}|${effectiveBgColor}|${effectiveIconBgColor}|${chip.padding != null ? chip.padding : ''}|${chip.text_size || ''}|${chip.label_size || ''}|${chip.inner_gap || ''}|${chip.text_gap || ''}|${chip.icon_size || ''}|${chip.icon_padding || ''}|${chipAlignClass}|${_fcTemplow != null ? _fcTemplow : ''}|${chip.forecast_low_position || ''}|${isBehind}|${useFancyUnit}|${chip.value_weight || ''}|${chip.chip_round || ''}|${chip.type || ''}|${chip.ring_min != null ? chip.ring_min : ''}|${chip.ring_max != null ? chip.ring_max : ''}|${chip.ring_color || ''}|${chip.ring_width || ''}|${chip.ring_gap || ''}|${chip.ring_threshold_mode || ''}|${JSON.stringify(chip.ring_thresholds || '')}`;
+        const sig = `${idx}|${formatted}|${unit}|${iconValue}|${iconStrategy}|${showIcon}|${showLabel}|${showValue}|${overflowMode}|${labelOverflow}|${marqueeSpeed}|${marqueeRtl}|${width}|${height}|${nameSig}|${effectiveBg}|${bgStyle}|${effectiveFormat}|${iconBg != null ? iconBg : ''}|${isFree}|${posAnchor}|${posX}|${posY}|${effectiveBgColor}|${effectiveIconBgColor}|${chip.padding != null ? chip.padding : ''}|${chip.text_size || ''}|${chip.label_size || ''}|${chip.inner_gap || ''}|${chip.text_gap || ''}|${chip.icon_size || ''}|${chip.icon_padding || ''}|${chipAlignClass}|${subValueSig}|${chip.sub_value_position || ''}|${chip.sub_value_format != null ? chip.sub_value_format : ''}|${chip.sub_value_size || ''}|${chip.sub_value_weight || ''}|${chip.sub_value_overflow || ''}|${chip.hide_sub_value || ''}|${isBehind}|${useFancyUnit}|${chip.value_weight || ''}|${chip.label_weight || ''}|${chip.chip_round || ''}|${chip.type || ''}|${chip.ring_min != null ? chip.ring_min : ''}|${chip.ring_max != null ? chip.ring_max : ''}|${chip.ring_color || ''}|${chip.ring_width || ''}|${chip.ring_gap || ''}|${chip.ring_threshold_mode || ''}|${JSON.stringify(chip.ring_thresholds || '')}|${chip.bar_min != null ? chip.bar_min : ''}|${chip.bar_max != null ? chip.bar_max : ''}|${chip.bar_color || ''}|${chip.bar_height || ''}|${chip.bar_gap || ''}|${chip.bar_threshold_mode || ''}|${JSON.stringify(chip.bar_thresholds || '')}|${gaugeSig}`;
         return { html: chipHtml, sig, sensorObj, iconStrategy, showIcon, isFree, isBehind, posAnchor, posX, posY, width };
     }
     _updateImage(hass, isNight, weatherState = 'default') {
@@ -2515,7 +2639,7 @@ class AtmosphericWeatherCard extends HTMLElement {
         const fx = this._perfEffects, isUltra = fx >= 2;
         if (fx >= 1 && this._isThemeDark && this._isTimeNight && (p.type === 'stars' || p.type === 'cloud') && (p.cloud || 0) <= 5 && Math.random() < 0.04) this._initAurora(w, h);
         if (fx >= 1 && this._isNight && p.type === 'stars' && Math.random() < (isUltra ? 0.002 : 0.0011)) this._comets.push(this._createComet(w, h));
-        if (fx >= 1 && Math.random() < 0.25) this._planes.push(this._createPlane(w, h)); if (p.type === 'fog' || p.foggy) this._initFogBanks(w, h);
+        if (this._perfFauna >= 2 && Math.random() < 0.25) this._planes.push(this._createPlane(w, h)); if (p.type === 'fog' || p.foggy) this._initFogBanks(w, h);
         if ((p.count || 0) > 0 && p.type !== 'stars' && p.type !== 'fog') this._initPrecipitation(w, h, p);
         if ((p.cloud || 0) > 0) this._initClouds(w, h, p); if (this._isNight && (p.cloud || 0) < 5) this._initNightClouds(w, h);
             const celestialDecor = !this._isNight ? p.celestial : null;
@@ -3286,7 +3410,7 @@ class AtmosphericWeatherCard extends HTMLElement {
         ctx.globalAlpha = fadeOpacity;
         for (let i = 0; i < len; i++) {
             const cloud = this._celestialClouds[i]; if (!cloud._bakedCanvas) continue; const sunUnit = cloud._sunUnit !== undefined ? cloud._sunUnit : 1.0;
-            cloud.driftPhase += 0.008 * (this._dt || 1); cloud.breathPhase += cloud.breathSpeed * (this._dt || 1); const driftX = Math.sin(cloud.driftPhase) * 12 * sunUnit;
+            cloud.driftPhase += 0.008; cloud.breathPhase += cloud.breathSpeed; const driftX = Math.sin(cloud.driftPhase) * 12 * sunUnit;
             const driftY = Math.cos(cloud.driftPhase * 0.7) * 4 * sunUnit; cloud.x = cloud.baseX + driftX + effectiveWind * 0.3;
             cloud.y = cloud.baseY + driftY; const driftClamp = 60 * sunUnit;
             if (cloud.x > cloud.baseX + driftClamp) cloud.x = cloud.baseX + driftClamp;
@@ -3305,8 +3429,8 @@ class AtmosphericWeatherCard extends HTMLElement {
         ctx.globalAlpha = fadeOpacity;
         for (let i = 0; i < cloudList.length; i++) {
             const cloud = cloudList[i], depthFactor = 1 + cloud.layer * 0.2;
-            cloud.x += cloud.speed * effectiveWind * depthFactor * (this._dt || 1); if (cloud.x > w + 280) cloud.x = -280; if (cloud.x < -280) cloud.x = w + 280;
-            cloud.breathPhase += cloud.breathSpeed * (this._dt || 1); if (!cloud._bakedCanvas) continue; const breathScale = 1 + Math.sin(cloud.breathPhase) * 0.022;
+            cloud.x += cloud.speed * effectiveWind * depthFactor; if (cloud.x > w + 280) cloud.x = -280; if (cloud.x < -280) cloud.x = w + 280;
+            cloud.breathPhase += cloud.breathSpeed; if (!cloud._bakedCanvas) continue; const breathScale = 1 + Math.sin(cloud.breathPhase) * 0.022;
             const drawScale = cloud.scale * breathScale, yDrift = Math.sin(cloud.breathPhase * 2.4) * 3.5, destX = cloud.x + cloud._bakeOffX * drawScale;
             const destY = (cloud.y - yLift + yDrift) + cloud._bakeOffY * drawScale;
             const destW = cloud._bakeLogicalW * drawScale, destH = cloud._bakeLogicalH * drawScale;
@@ -3327,7 +3451,7 @@ class AtmosphericWeatherCard extends HTMLElement {
             ctx.globalAlpha = starFade; ctx.drawImage(this._milkyWay, 0, 0); ctx.globalAlpha = 1;
         }
         for (let i = 0; i < len; i++) {
-            const s = this._stars[i]; s.phase += s.rate * (this._dt || 1);
+            const s = this._stars[i]; s.phase += s.rate;
             const twinkle = Math.sin(s.phase) + Math.sin(s.phase * 3) * 0.5 + Math.sin(s.phase * 0.3) * 0.25;
             const size = s.baseSize * (1 + twinkle * 0.30), horizFade = immH > 0 ? (1 - Math.pow(s.y / immH, 3)) : 1.0;
             const op = Math.min(1, Math.max(0, s.brightness * (1 + twinkle * 0.22) * starFade * horizFade));
@@ -3373,7 +3497,7 @@ class AtmosphericWeatherCard extends HTMLElement {
         ctx.globalAlpha = 1;
     }
     _drawShootingStars(ctx, w, h) {
-        const fadeOpacity = this._layerFadeProgress.stars, dpr = this._cachedDimensions.dpr, dt = this._dt || 1;
+        const fadeOpacity = this._layerFadeProgress.stars, dpr = this._cachedDimensions.dpr;
         const isUltra = this._perfEffects >= 2;
         const trailCap = isUltra ? 36 : TRAIL_CAP_SHOOTING_STAR;
         if (Math.random() < 0.002145 && this._shootingStars.length < LIMITS.MAX_SHOOTING_STARS) {
@@ -3402,8 +3526,8 @@ class AtmosphericWeatherCard extends HTMLElement {
         }
         ctx.lineCap = 'round';
         for (let i = this._shootingStars.length - 1; i >= 0; i--) {
-            const s = this._shootingStars[i]; s.x += s.vx * dt; s.vy += 0.045 * dt;
-            s.y += s.vy * dt; s.life -= s.decay * dt; const sCap = s._trailCap || TRAIL_CAP_SHOOTING_STAR; s.tailBuf[s.tailHead * 2] = s.x;
+            const s = this._shootingStars[i]; s.x += s.vx; s.vy += 0.045;
+            s.y += s.vy; s.life -= s.decay; const sCap = s._trailCap || TRAIL_CAP_SHOOTING_STAR; s.tailBuf[s.tailHead * 2] = s.x;
             s.tailBuf[s.tailHead * 2 + 1] = s.y; s.tailHead = (s.tailHead + 1) % sCap;
             if (s.tailLen < sCap) s.tailLen++;
             if (s.life <= 0) {
@@ -3448,10 +3572,10 @@ class AtmosphericWeatherCard extends HTMLElement {
             }
             this._comets.push({ x: startX, y: Math.random() * (h * 0.4), vx: speed * dir, vy: speed * 0.15, size: 1.5 + Math.random(), life: 1.2, _coreRgb: coreRgb, _glowRgb: glowRgb, _tailRgb: tailRgb, tailBuf: new Float32Array(TRAIL_CAP_COMET * 2), tailHead: 0, tailLen: 0 });
         }
-        const fadeOpacity = this._layerFadeProgress.stars; if (fadeOpacity <= 0) return; const dt = this._dt || 1;
+        const fadeOpacity = this._layerFadeProgress.stars; if (fadeOpacity <= 0) return;
         for (let i = this._comets.length - 1; i >= 0; i--) {
-            const c = this._comets[i]; c.x += c.vx * dt; c.y += c.vy * dt;
-            c.life -= 0.005 * dt;
+            const c = this._comets[i]; c.x += c.vx; c.y += c.vy;
+            c.life -= 0.005;
             if (c.life <= 0) {
                 this._comets.splice(i, 1);
                 continue;
@@ -3624,12 +3748,12 @@ class AtmosphericWeatherCard extends HTMLElement {
     }
     _drawRain(ctx, w, h, effectiveWind) {
         const fadeOpacity = this._layerFadeProgress.precipitation; if (fadeOpacity <= 0) return; const isDay = this._isLightBackground;
-        const rgbBase = this._renderState.rainRgb, len = this._rain.length, dpr = this._cachedDimensions.dpr, dt = this._dt || 1;
+        const rgbBase = this._renderState.rainRgb, len = this._rain.length, dpr = this._cachedDimensions.dpr;
         if (!this._rainTex) return;
         for (let i = 0; i < len; i++) {
-            const pt = this._rain[i]; pt.turbulence += 0.025 * dt; const turbX = Math.sin(pt.turbulence) * 0.4;
+            const pt = this._rain[i]; pt.turbulence += 0.025; const turbX = Math.sin(pt.turbulence) * 0.4;
             const speedFactor = (1 + this._windSpeed * 0.25) * (pt.z * 0.8 + 0.2), moveX = (effectiveWind * 1.8 + turbX) * (pt.z * 0.65 + 0.35);
-            const moveY = (pt.speedY * speedFactor); pt.x += moveX * dt; pt.y += moveY * dt;
+            const moveY = (pt.speedY * speedFactor); pt.x += moveX; pt.y += moveY;
             if (pt.y > h + 10) {
                 pt.y = -40 - (Math.random() * 20); pt.x = Math.random() * w;
             }
@@ -3644,11 +3768,11 @@ class AtmosphericWeatherCard extends HTMLElement {
     }
     _drawSnow(ctx, w, h, effectiveWind) {
         const fadeOpacity = this._layerFadeProgress.precipitation; if (fadeOpacity <= 0) return; const len = this._snow.length;
-        const isLight = this._isLightBackground; if (!this._snowTexFg) return; const dt = this._dt || 1;
+        const isLight = this._isLightBackground; if (!this._snowTexFg) return;
         for (let i = 0; i < len; i++) {
-            const pt = this._snow[i]; pt.wobblePhase += pt.wobbleSpeed * dt; const wobble = Math.sin(pt.wobblePhase) * 1.5;
-            pt.turbulence += 0.01 * dt; const turbX = Math.sin(pt.turbulence) * 0.5; pt.y += pt.speedY * dt;
-            pt.x += (wobble + turbX + effectiveWind * 0.8) * (pt.z * 0.65 + 0.35) * dt;
+            const pt = this._snow[i]; pt.wobblePhase += pt.wobbleSpeed; const wobble = Math.sin(pt.wobblePhase) * 1.5;
+            pt.turbulence += 0.01; const turbX = Math.sin(pt.turbulence) * 0.5; pt.y += pt.speedY;
+            pt.x += (wobble + turbX + effectiveWind * 0.8) * (pt.z * 0.65 + 0.35);
             if (pt.y > h + 5) {
                 pt.y = -5; pt.x = Math.random() * w;
             }
@@ -3670,11 +3794,11 @@ class AtmosphericWeatherCard extends HTMLElement {
     }
     _drawHail(ctx, w, h, effectiveWind) {
         const fadeOpacity = this._layerFadeProgress.precipitation; if (fadeOpacity <= 0) return; const len = this._hail.length;
-        const isLight = this._isLightBackground, dpr = this._cachedDimensions.dpr, dt = this._dt || 1;
+        const isLight = this._isLightBackground, dpr = this._cachedDimensions.dpr;
         if (!this._hailTex) return;
         for (let i = 0; i < len; i++) {
-            const pt = this._hail[i]; pt.turbulence += 0.035 * dt; const turbX = Math.sin(pt.turbulence) * 1.2;
-            pt.y += pt.speedY * (1 + this._windSpeed * 0.35) * dt; pt.x += (effectiveWind * 2.5 + turbX) * (pt.z * 0.65 + 0.35) * dt; pt.rotation += pt.rotationSpeed * dt;
+            const pt = this._hail[i]; pt.turbulence += 0.035; const turbX = Math.sin(pt.turbulence) * 1.2;
+            pt.y += pt.speedY * (1 + this._windSpeed * 0.35); pt.x += (effectiveWind * 2.5 + turbX) * (pt.z * 0.65 + 0.35); pt.rotation += pt.rotationSpeed;
             if (pt.y > h + 10) {
                 pt.y = -15 - (Math.random() * 20); pt.x = Math.random() * w;
             }
@@ -3757,7 +3881,7 @@ class AtmosphericWeatherCard extends HTMLElement {
         }
     }
     _drawAurora(ctx, w, h) {
-        if (!this._aurora) return; const fadeOpacity = this._layerFadeProgress.effects; this._aurora.phase += 0.006 * (this._dt || 1);
+        if (!this._aurora) return; const fadeOpacity = this._layerFadeProgress.effects; this._aurora.phase += 0.006;
         ctx.save();
         ctx.globalCompositeOperation = this._isThemeDark ? 'lighter' : 'source-over';
         ctx.globalAlpha = fadeOpacity; const waves = this._aurora.waves; const waveLen = waves.length;
@@ -3781,7 +3905,7 @@ class AtmosphericWeatherCard extends HTMLElement {
     _drawFog(ctx, w, h) {
         const fadeOpacity = this._layerFadeProgress.effects, len = this._fogBanks.length, dpr = this._cachedDimensions.dpr;
         for (let i = 0; i < len; i++) {
-            const f = this._fogBanks[i]; f.x += f.speed * (this._dt || 1); f.phase += 0.008 * (this._dt || 1);
+            const f = this._fogBanks[i]; f.x += f.speed; f.phase += 0.008;
             if (f.x > w + f.w / 2) f.x = -f.w / 2; if (f.x < -f.w / 2) f.x = w + f.w / 2; const undulation = Math.sin(f.phase) * 5;
             if (!f._g) {
                 const color = this._isLightBackground ? '190,200,215' : (this._isTimeNight ? '85,90,105' : '72,81,95');
@@ -3816,13 +3940,13 @@ class AtmosphericWeatherCard extends HTMLElement {
             activeCount = Math.max(activeCount, Math.round(pool * 0.58)); vaporOp = Math.max(vaporOp, 1.05);
         }
         const len = Math.min(pool, activeCount); if (len <= 0) return; const gustVal = this._windGust * windIntensity;
-        const isDark = this._isThemeDark, dt = this._dt || 1;
+        const isDark = this._isThemeDark;
         const rotFade = isWindy ? 0 : (windKmh >= 15 ? Math.max(0, 1 - windIntensity * 2.0) : 1.0);
         const windThin = 1.0 - windIntensity * 0.25, shear = windIntensity * 0.12;
         ctx.globalCompositeOperation = isDark ? 'screen' : 'source-over';
         for (let i = 0; i < len; i++) {
-            const v = this._windVapor[i]; v.phase += v.phaseSpeed * Math.max(speedMul, 0.04) * dt; const gustBoost = Math.max(0, gustVal) * v.gustWeight * 1.2;
-            const baseVelocity = (v.speed * speedMul) + effectiveWind * speedMul; v.x += (baseVelocity + gustBoost) * (1 + this._windSpeed * 0.15) * dt;
+            const v = this._windVapor[i]; v.phase += v.phaseSpeed * Math.max(speedMul, 0.04); const gustBoost = Math.max(0, gustVal) * v.gustWeight * 1.2;
+            const baseVelocity = (v.speed * speedMul) + effectiveWind * speedMul; v.x += (baseVelocity + gustBoost) * (1 + this._windSpeed * 0.15);
             const undulation = Math.sin(v.phase) * v.drift; if (v.x > w + v.w) v.x = -v.w; if (v.x < -v.w * 1.5) v.x = w + v.w;
             const tierOp = isDark ? (0.28 + v.tier * 0.24) : (0.45 + v.tier * 0.28);
             const depthFade = 0.40 + (v.depthNorm || 0.5) * 0.60, gustOpBump = Math.max(0, gustVal) * 0.15;
@@ -3837,10 +3961,9 @@ class AtmosphericWeatherCard extends HTMLElement {
         ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     }
     _drawBirds(ctx, w, h) {
-        const dt = this._dt || 1;
         for (let i = this._birds.length - 1; i >= 0; i--) {
-            const b = this._birds[i]; b.x += b.vx * dt; b.flapPhase += b.flapSpeed * dt;
-            b.y += (b.vy - Math.sin(b.flapPhase) * b.size * 0.04) * dt; const isOffRight = b.vx > 0 && b.x > w + 100; const isOffLeft = b.vx < 0 && b.x < -100;
+            const b = this._birds[i]; b.x += b.vx; b.flapPhase += b.flapSpeed;
+            b.y += (b.vy - Math.sin(b.flapPhase) * b.size * 0.04); const isOffRight = b.vx > 0 && b.x > w + 100; const isOffLeft = b.vx < 0 && b.x < -100;
             if (isOffRight || isOffLeft) this._birds.splice(i, 1);
         }
         const p = this._params, isSevereWeather = this._renderState.isSevereWeather;
@@ -3893,7 +4016,7 @@ class AtmosphericWeatherCard extends HTMLElement {
         ctx.restore();
     }
     _drawPlanes(ctx, w, h) {
-        const dpr = this._cachedDimensions.dpr, dt = this._dt || 1;
+        const dpr = this._cachedDimensions.dpr;
         if (this._planes.length === 0 && Math.random() < 0.0025) this._planes.push(this._createPlane(w, h));
         for (let i = this._planes.length - 1; i >= 0; i--) {
             const plane = this._planes[i], dir = plane.vx > 0 ? 1 : -1;
@@ -3901,9 +4024,9 @@ class AtmosphericWeatherCard extends HTMLElement {
                 plane._sinA = Math.sin(plane.climbAngle); plane._cosA = Math.cos(plane.climbAngle);
             }
             const sinA = plane._sinA, cosA = plane._cosA;
-            plane.x += plane.vx * dt; plane.y += plane.vy * dt;
+            plane.x += plane.vx; plane.y += plane.vy;
             if (plane.gapTimer > 0) {
-                plane.gapTimer -= dt;
+                plane.gapTimer -= 1;
             } else if (Math.random() < 0.005) {
                 plane.gapTimer = 8 + Math.random() * 14;
             }
@@ -3913,10 +4036,10 @@ class AtmosphericWeatherCard extends HTMLElement {
                 plane.histBuf[wi * 3 + 2] = plane.gapTimer > 0 ? 1 : 0; plane.histHead = (wi + 1) % TRAIL_CAP_PLANE;
                 if (plane.histLen < TRAIL_CAP_PLANE) plane.histLen++;
                 plane._lastRecX = plane.x; plane._lastRecY = plane.y;
-            } const windShift = (this._windSpeed || 0) * 0.15 * dt;
+            } const windShift = (this._windSpeed || 0) * 0.15;
             for (let j = 1; j < plane.histLen; j++) {
                 const ridx = (((plane.histHead - 1 - j) % TRAIL_CAP_PLANE) + TRAIL_CAP_PLANE) % TRAIL_CAP_PLANE;
-                plane.histBuf[ridx * 3] += windShift; plane.histBuf[ridx * 3 + 1] += 0.02 * dt;
+                plane.histBuf[ridx * 3] += windShift; plane.histBuf[ridx * 3 + 1] += 0.02;
             }
             if (plane.histLen > 2) {
                 const baseOp = this._isThemeDark ? 0.12 : 0.23;
@@ -3961,7 +4084,7 @@ class AtmosphericWeatherCard extends HTMLElement {
             for (let seg = 0; seg < PLANE_PATH.length; seg++) {
                 const s = PLANE_PATH[seg]; ctx.moveTo(s[0] * dir, s[1]); ctx.lineTo(s[2] * dir, s[3]);
             }
-            ctx.stroke(); ctx.globalAlpha = 1; plane.blinkPhase += 0.12 * dt;
+            ctx.stroke(); ctx.globalAlpha = 1; plane.blinkPhase += 0.12;
             if (Math.sin(plane.blinkPhase) > 0.75) {
                 ctx.globalAlpha = 1.0;
                 ctx.fillStyle = plane.vx > 0 ? (this._isThemeDark ? 'rgb(90, 255, 130)' : 'rgb(50, 255, 80)') : (this._isThemeDark ? 'rgb(255, 100, 100)' : 'rgb(255, 50, 50)');
@@ -3977,7 +4100,7 @@ class AtmosphericWeatherCard extends HTMLElement {
             this._stopAnimation();
             return;
         }
-        const targetInterval = 1000 / this._perfFps, deltaTime = timestamp - this._lastFrameTime;
+        const targetInterval = 33.333, deltaTime = timestamp - this._lastFrameTime;
         if (deltaTime < targetInterval * 0.85) {
             this._animID = requestAnimationFrame(this._boundAnimate);
             return;
@@ -3999,13 +4122,12 @@ class AtmosphericWeatherCard extends HTMLElement {
             this._animID = requestAnimationFrame(this._boundAnimate);
             return;
         }
-        this._dt = targetInterval / 33.333;
-        this._gustPhase += 0.012 * this._dt; this._microGustPhase += 0.03 * this._dt;
+        this._gustPhase += 0.012; this._microGustPhase += 0.03;
         this._windGust = Math.sin(this._gustPhase) * 0.35 + Math.sin(this._gustPhase * 2.1) * 0.15 + Math.sin(this._microGustPhase) * 0.08;
         const effectiveWind = ((p.wind || 0.1) + this._windGust) * (1 + this._windSpeed);
-        this._sunPulsePhase += 0.008 * this._dt;
+        this._sunPulsePhase += 0.008;
         const cloudGlobalOp = this._renderState.cloudGlobalOp, rs = this._renderState;
-        const fx = this._perfEffects;
+        const fx = this._perfEffects, fauna = this._perfFauna;
         if (fx >= 1 && rs.glow && rs.glow.drawPhase === 'bg') this._drawCelestialGlow(bg, w, h);
         if (fx >= 1) this._drawAurora(mid, w, h); this._drawStars(bg, w, h, dpr); this._drawMoon(bg, w, h);
         if (fx >= 1 && this._isNight && this._isThemeDark && this._stars.length > 0) this._drawShootingStars(bg, w, h);
@@ -4017,9 +4139,9 @@ class AtmosphericWeatherCard extends HTMLElement {
         if (fx >= 1 && this._fogBanks.length > 0) this._drawFog(mid, w, h);
         this._drawClouds(mid, this._clouds, w, h, effectiveWind, cloudGlobalOp);
             if (fx >= 1 && glowActive && glowActive.drawPhase === 'mid-post') this._drawCelestialGlow(mid, w, h);
-            if (fx >= 1) this._drawBirds(mid, w, h);
+            if (fauna >= 1) this._drawBirds(mid, w, h);
         this._drawClouds(mid, this._fgClouds, w, h, effectiveWind, cloudGlobalOp);
-        if (fx >= 1) this._drawPlanes(mid, w, h); this._drawLightning(fg, w, h);
+        if (fauna >= 2) this._drawPlanes(mid, w, h); this._drawLightning(fg, w, h);
         this._drawRain(fg, w, h, effectiveWind); this._drawHail(fg, w, h, effectiveWind); this._drawSnow(fg, w, h, effectiveWind);
         this._animID = requestAnimationFrame(this._boundAnimate);
     }
