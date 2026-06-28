@@ -71,14 +71,14 @@ A detail-oriented weather and forecast card.
 | **`weather_entity`** | `string` | — | **Required.** Your weather integration entity (e.g., `weather.your_weather_entity`). This drives the background animation and the forecast data. |
 | **`sun_entity`** | `string` | — | **Required.** Tracks the sun to switch between day and night. Without it, the card stays in permanent day. |
 
-> [!IMPORTANT]
-> When you add the card it comes with a small default layout already set up: the temperature, a UV ring, and today's high and low. Everything on top of the background is built from [buttons](#buttons), so you can change, remove, or add to that starting point until the card shows exactly what you want.
+> [!TIP]
+> When you add the card it comes with a small default layout already set up. Everything on top of the background is built from [buttons](#buttons), so you can change, remove, or add to that starting point until the card shows exactly what you want.
 
 <br>
 
 ## Examples
 
-The card is flexible, so these are starting points rather than fixed designs. You can change anything, mix elements, and combine the card with other Home Assistant cards. To get the exact look from the screenshots, add the [font](#font-family) and the [weather icons](#weather-icons) using the guides.
+The card is flexible, so these are starting points rather than fixed designs. You can change anything, mix elements, add images and even combine the card with other Home Assistant cards. To get the exact look from the screenshots, add the [font](#font-family) using the guide.
 
 <br>
 
@@ -89,7 +89,7 @@ The card is flexible, so these are starting points rather than fixed designs. Yo
 
 <br>
 
-A compact card with the temperature in the top-left, a forecast ring on the right, and today's high and low along the bottom.
+A compact card with the current temperature, an UV-Index ring with the current weather as icon, and today's high and low temperature.
 
 ```yaml
 type: custom:atmospheric-weather-card
@@ -218,7 +218,7 @@ button_areas:
 
 <br>
 
-A taller card with a big temperature and a live subtext in the top-left, a UV ring in the top-right, today's high and low at the bottom, and a scrollable eight-hour forecast strip underneath.
+A taller card with a big temperature, a UV ring, today's high and low at the bottom, and a scrollable hourly forecast underneath.
 
 ```yaml
 type: custom:atmospheric-weather-card
