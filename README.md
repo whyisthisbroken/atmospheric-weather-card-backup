@@ -1,3 +1,13 @@
+> [!NOTE]
+> **A Personal Update:** This project was the first (and only) hobby project I have ever released to the public. I poured an incredible amount of my free time into it over the last half a year. The rework for V5 alone (which was meant to be the new clean foundation) took hundreds of hours.
+> 
+> I learned a lot and had a lot of fun, but most of all, I now truly understand why and how open-source developers burn out. For a weather card fueled entirely by passion and ideas, motivation is a critical factor. The reality is that positive feedback is rare, while the sheer volume of entirely different setups you have to try and support is unexpectedly huge (it is Home Assistant, after all).
+> 
+> Because of this, I have decided to archive this repository and continue working on it in private. Thank you to those who supported the project along the way.
+
+<br>
+
+
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=flat-square)](https://github.com/hacs/integration)
 ![Contains](https://img.shields.io/badge/Contains-★_Shooting_Stars-333?style=flat-square)
 
