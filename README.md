@@ -1,5 +1,3 @@
-![Contains](https://img.shields.io/badge/Contains-★_Shooting_Stars-333?style=flat-square)
-
 > [!IMPORTANT]
 > **This is an archived repository.** The original author (`shpongledsummer`) deleted their repository and account. This is a preserved copy being organized and maintained for reference and continued use by the community. **No active development is taking place** — only cleanup, organization, and critical fixes if needed. [More information](MAINTENANCE.md).
 
@@ -7,9 +5,13 @@
 
 ## Atmospheric Weather Card
 
-<img width="400" alt="Image" src="https://github.com/user-attachments/assets/e0781ab6-abee-4783-8ee4-4cd6791cbce7" />
-
 This README combines the current card documentation with selected context from the older README, so setup, examples, and repository history stay in one place.
+
+
+> **At a glance**
+> - Manual import only
+> - Archived repository, kept for reference and critical fixes
+> - Core setup: `weather_entity`, `sun_entity`, optional `moon_phase_entity`
 
 
 A detail-oriented weather and forecast card.
@@ -43,7 +45,7 @@ A detail-oriented weather and forecast card.
 
 <br>
 
-[![Open your Home Assistant instance and navigate to your lovelace resources.](https://my.home-assistant.io/badges/lovelace_resources.svg)](https://my.home-assistant.io/redirect/lovelace_resources/)
+[Open your Home Assistant instance and navigate to your lovelace resources.](https://my.home-assistant.io/redirect/lovelace_resources/)
 
 1. Download `atmo-weather-card.js` and `atmo-weather-card-editor.js` from the latest release.
 2. Place both files in your `config/www/atmo-weather-card/` folder:
@@ -90,8 +92,6 @@ The older Atmospheric Weather Card README described the original repository as a
 The card is meant to be pretty flexible. You can customize these examples however you like, mix different elements, or combine them with other Home Assistant cards. If you want the exact look from the screenshots, use the guides to add the [fonts](#font-family) and [weather icons](#weather-icons).
 
 <br>
-
-<img width="400" alt="Image" src="https://github.com/user-attachments/assets/7081d651-29ef-4a83-a53f-5b40870a6002" />
 
 <details>
 <summary><b>Forecast Slider</b></summary>
@@ -237,8 +237,6 @@ grid_options:
 </details>
 
 <br>
-
-<img width="400" alt="Image" src="https://github.com/user-attachments/assets/2baaac73-6f13-4803-8961-0665dcae7beb" />
 
 <details>
 <summary><b>Forecast & Mini-graph</b></summary>
@@ -401,8 +399,6 @@ custom_cards:
 </details>
 
 <br>
-
-<img width="400" alt="Image" src="https://github.com/user-attachments/assets/b060b527-5d48-42de-8541-16fc4883ce10" />
 
 <details>
 <summary><b>Forecast & Ring Chip</b></summary>
@@ -1115,8 +1111,6 @@ Even with all this effort, older setups might still struggle, and the birds may 
 
 <br>
 
-<img width="400" alt="image" src="https://github.com/user-attachments/assets/97eebe8f-4718-4186-8400-cb02605759dc" />
-
 This screenshot shows a 30-second stress test running five weather cards in parallel in my test setup, within a dashboard with lots of other HA cards. Weather states were constantly switched and the UI was heavily interacted with to push the performance.
 
 The blue memory line shows a healthy sawtooth pattern. The browser regularly clears memory and returns to the baseline. The bottom left summary breaks down processor usage. Because the graphics are reused, less than 10 percent of the time was spent rendering and just about 5% was spent actually painting the animations. For roughly 75 percent of the test, the device processor was completely idle. It was a long and hard way to achieve this result.
@@ -1144,4 +1138,4 @@ The card has three performance presets — `low`, `default`, and `ultra` — whi
 
 If you enjoy using this card and want to say thanks, a coffee is always appreciated :)
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X31WXQHF)
+[Ko-fi support link](https://ko-fi.com/X8X31WXQHF)
