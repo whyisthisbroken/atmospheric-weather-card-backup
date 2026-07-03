@@ -4,6 +4,7 @@
 ---
 
 ## Atmospheric Weather Card
+<img width="1774" height="887" alt="image" src="https://github.com/user-attachments/assets/69421bef-3952-4f06-bdc8-dc141be82f33" />
 
 This README combines the current card documentation with selected context from the older README, so setup, examples, and repository history stay in one place.
 
@@ -1134,8 +1135,3 @@ The card has three performance presets — `low`, `default`, and `ultra` — whi
 
 <br>
 
-## Support the project
-
-If you enjoy using this card and want to say thanks, a coffee is always appreciated :)
-
-[Ko-fi support link](https://ko-fi.com/X8X31WXQHF)
