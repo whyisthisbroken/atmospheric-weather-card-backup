@@ -1,9 +1,16 @@
+> [!IMPORTANT]
+> **This is an archived repository.** The original author (`shpongledsummer`) deleted their repository and account. This is a preserved copy being organized and maintained for reference and continued use by the community. **No active development is taking place** — only cleanup, organization, and critical fixes if needed.
+
+---
+
 > [!NOTE]
 > **A Personal Update:** This project was the first (and only) hobby project I have ever released to the public. I poured an incredible amount of my free time into it over the last half a year. The rework for V5 alone (which was meant to be the new clean foundation) took hundreds of hours.
 > 
 > I learned a lot and had a lot of fun, but most of all, I now truly understand why and how open-source developers burn out. For a weather card fueled entirely by passion and ideas, motivation is a critical factor. The reality is that positive feedback is rare, while the sheer volume of entirely different setups you have to try and support is unexpectedly huge (it is Home Assistant, after all).
 > 
 > Because of this, I have decided to archive this repository and continue working on it in private. Thank you to those who supported the project along the way.
+>
+> — *Original Author (shpongledsummer)*
 
 <br>
 
@@ -849,7 +856,7 @@ card_mod:
 <details>
 <summary><b>Buttons & Forecasts</b></summary>
 
-Buttons are the small elements you add to the card. Each one can show live data from any Home Assistant entity, or a weather forecast. You group buttons into [areas](#appearance), and each area has its own position and layout. Within an area you can leave all buttons looking the same (good for a forecast row) or style each one differently. Every option is listed in the [Appearance](#appearance) section.
+Buttons are the small elements you add to the card. Each one can show live data from any Home Assistant entity, or a weather forecast. You group buttons into [areas](#appearance), and each area has its own layout and positioning. Within an area you can leave all buttons looking the same (good for a forecast row) or style each one differently.
 
 <details>
 <summary><strong>Forecast buttons</strong></summary>
@@ -1000,55 +1007,13 @@ buttons:
   - entity: weather.your_weather_entity
     forecast: daily
     attribute: temperature
-    name: "Today: "
+    forecast_offset: 0
     sub_value_attribute: templow
-    sub_value_format: " –"
-    text_order: label,sub,value
+    sub_value_format: " – "
+    text_order: sub,value
 ```
-
-Use `text_order` to set the order of the label, value, and second value (here it reads "Today: low – high").
 
 </details>
-
-<details>
-<summary><strong>Free positioning</strong></summary>
-
-<br>
-
-Any button can be lifted out of its area and placed anywhere. Set `position: custom` and use the anchor and offsets.
-
-```yaml
-buttons:
-  - entity: sensor.outside_temperature
-    position: custom
-    position_anchor: top-right
-    position_x: 20px
-    position_y: 10px
-    background: true
-```
-
-This places the button 20px from the right and 10px from the top, independent of the area it lives in. The anchor uses the same 9-cell grid as the areas.
-
-</details>
-
-<details>
-<summary><strong>Conditional buttons</strong></summary>
-
-<br>
-
-A button can be shown only when certain conditions are met, using the standard Home Assistant visibility conditions.
-
-```yaml
-buttons:
-  - entity: sensor.wind_gust
-    name: Gust
-    visibility:
-      - condition: numeric_state
-        entity: sensor.wind_gust
-        above: 40
-```
-
-This button only appears when the gust value goes above 40. State, numeric state, screen size, user, and `and`/`or`/`not` conditions are all supported.
 
 </details>
 
@@ -1107,11 +1072,11 @@ The animated background uses GLSL shaders. It is optimized to balance visual det
 
 * **Use a simple background.** Set `simple_background: true` for a lightweight CSS gradient that still changes with the weather and time of day. The shader is switched off. See [Simple Backgrounds](#simple-backgrounds).
 * **Use your own images instead.** Set `weather_image_path` to a folder of images or videos named after the weather states (like `rainy.jpg` or `sunny.mp4`). The card shows the matching file for the current weather and switches the shader off. You can add a separate night folder with `weather_image_path_night`.
-* **Turn the animation off.** Set `disable_background: true` to switch the shader off completely. The card keeps working and your buttons and layout stay exactly the same, just without the moving background.
+* **Turn the animation off.** Set `fx_detail: 0` to switch the shader off completely. The card keeps working and your buttons and layout stay exactly the same, just without the moving background.
 
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `disable_background` | `boolean` | `false` | Integrated shader animations, `true` switches them off. |
+| `fx_detail` | `number` | `1` | Visual detail of the animation, from `0` to `1`. Lower values are lighter on the GPU but look simpler. Set to `0` to turn the shader off completely. |
 | `simple_background` | `boolean` | `false` | Lightweight CSS gradient instead of the shader. |
 | `weather_image_path` | `string` | — | Folder of images or videos to show instead of the animation. |
 | `weather_image_path_night` | `string` | — | Optional separate folder for night. Falls back to the day folder. |
