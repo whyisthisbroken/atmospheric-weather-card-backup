@@ -1,5 +1,5 @@
 > [!IMPORTANT]
-> **This is an archived repository.** The original author (`shpongledsummer`) deleted their repository and account. This is a preserved copy being organized and maintained for reference and continued use by the community. **No active development is taking place** — only cleanup, organization, and critical fixes if needed.
+> **This is an archived repository.** The original author (`shpongledsummer`) deleted their repository and account. This is a preserved copy being organized and maintained for reference and continued use by the community. **No active development is taking place** — only cleanup, organization, and critical fixes if needed. [More information](MAINTENANCE.md).
 
 ---
 
@@ -39,6 +39,8 @@ A detail-oriented weather and forecast card.
 **Guides** · [Buttons](#buttons) · [Font](#font-family) · [Icons](#weather-icons)
 
 **Reference** · [Color Mode](#color-mode) · [Simple Backgrounds](#simple-backgrounds) · [Performance](#performance)
+
+**Maintenance** · [Status & Archive Info](MAINTENANCE.md)
 
 <br>
 
@@ -1080,9 +1082,3 @@ The animated background uses GLSL shaders. It is optimized to balance visual det
 | `simple_background` | `boolean` | `false` | Lightweight CSS gradient instead of the shader. |
 | `weather_image_path` | `string` | — | Folder of images or videos to show instead of the animation. |
 | `weather_image_path_night` | `string` | — | Optional separate folder for night. Falls back to the day folder. |
-
-<br>
-
-## Support the project
-
-If you find this card useful, consider leaving a star. It helps with motivation :)
