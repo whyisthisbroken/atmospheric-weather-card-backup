@@ -75,7 +75,7 @@ jobs:
 
             [ -z "$COMMITS" ] && COMMITS="- No commit messages found."
 
-BODY=$(printf '## Changes\n%s\n\n## Compare\n%s' "$COMMITS" "$COMPARE_LINE")
+            BODY=$(printf '## Changes\n%s\n\n## Compare\n%s' "$COMMITS" "$COMPARE_LINE")
 
             MAKE_LATEST="false"
             [ "$cur" = "$HIGHEST_STABLE" ] && MAKE_LATEST="true"
