@@ -62,6 +62,33 @@ A detail-oriented weather and forecast card.
 
 <br>
 
+## Upgrading from v4.5.x
+
+Version 6 continues directly from **v4.5** — all chip options, config
+parameters, and behavior remain the same. The only change is the card's
+internal name, renamed from `atmospheric-weather-card` to `atmo-weather-card`.
+
+**What to update in your dashboard YAML:**
+
+```
+type: custom:atmospheric-weather-card    # old (v4.5.x)
+type: custom:atmo-weather-card           # new (v6+)
+```
+
+You'll also need to update your Lovelace resource URL and local file folder
+to match the new name, as shown in the [Installation](#installation) section
+above.
+
+Everything else in your existing configuration — chips, colors, layout
+options — keeps working unchanged after this rename.
+
+**Note on v5.0–v5.x:** These versions were a from-scratch rewrite by the
+original author and are not compatible with v4.5 or v6 configurations. They
+are kept, unmaintained, under [`legacy/v5`](./legacy/v5) for anyone who
+specifically wants that version.
+
+<br>
+
 ## Archive Context
 
 The older Atmospheric Weather Card README described the original repository as archived after the upstream author stepped away. This merged README keeps that context while presenting the current card documentation in one place.
