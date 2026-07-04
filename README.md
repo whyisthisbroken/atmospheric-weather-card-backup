@@ -6,6 +6,11 @@
 ## Atmo Weather Card
 <img width="1774" height="887" alt="image" src="https://github.com/user-attachments/assets/69421bef-3952-4f06-bdc8-dc141be82f33" />
 
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Lovelace%20Card-41BDF5.svg)](https://www.home-assistant.io/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/whyisthisbroken/atmo-weather-card/blob/main/LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/whyisthisbroken/atmo-weather-card)](https://github.com/whyisthisbroken/atmo-weather-card/releases)
+[![GitHub last commit](https://img.shields.io/github/last-commit/whyisthisbroken/atmo-weather-card)](https://github.com/whyisthisbroken/atmo-weather-card/commits/main)
+
 This README combines the current card documentation with selected context from the older README, so setup, examples, and repository history stay in one place.
 
 
@@ -35,7 +40,9 @@ A detail-oriented weather and forecast card.
 
 <br>
 
-> **Note on AI:** I'm using it to speed up what would have taken years manually. I hope the card's quality speaks for itself and shows the experience behind it.
+> [!NOTE]
+> I'm using it to speed up what would have taken years manually. I hope the
+> card's quality speaks for itself and shows the experience behind it.
 
 <br>
 
@@ -1158,3 +1165,6 @@ The card has three performance presets — `low`, `default`, and `ultra` — whi
 
 <br>
 
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
