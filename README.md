@@ -1199,6 +1199,7 @@ The card has three performance presets — `low`, `default`, and `ultra` — whi
 | `perf_fps` | `number` | `30` | Animation frame rate. `30` saves battery, `60` is smoother. |
 | `perf_cloud_quality` | `number` | `1.5` | Cloud detail level. Controls how many puffs each cloud shape gets. `0.5` = low, `1` = medium, `1.5` = high, `2` = ultra. |
 | `perf_effects` | `number` | `1` | Weather effects intensity. `0` disables birds, planes, shooting stars, aurora, and wind vapor. `1` enables them at default rates. `2` increases spawn rates for all effects. |
+| `perf_fauna` | `number` | `1` | Birds and planes spawn rate. `0` = no fauna, `1` = birds only, `2` = birds and planes. Separate control from weather effects. |
 | `perf_dpr` | `number` | `2` | Canvas sharpness. Controls the device pixel ratio used for rendering. `0.5` = low, `1` = medium, `1.5` = high, `2` = full retina. Lower values reduce GPU load on high-DPI screens. |
 
 </details>
