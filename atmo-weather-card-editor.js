@@ -177,6 +177,11 @@ const CHIP_BOOLEAN_FIELDS = Object.freeze([
 const CHIP_CSS_SIZE_FIELDS = Object.freeze([
     "width", "height"
 ]);
+const SAFE_TOP_LEVEL_NUMBER_FIELDS = (typeof TOP_LEVEL_NUMBER_FIELDS !== "undefined" && Array.isArray(TOP_LEVEL_NUMBER_FIELDS)) ? TOP_LEVEL_NUMBER_FIELDS : [];
+const SAFE_TOP_LEVEL_BOOLEAN_FIELDS = (typeof TOP_LEVEL_BOOLEAN_FIELDS !== "undefined" && Array.isArray(TOP_LEVEL_BOOLEAN_FIELDS)) ? TOP_LEVEL_BOOLEAN_FIELDS : [];
+const SAFE_CHIP_NUMBER_FIELDS = (typeof CHIP_NUMBER_FIELDS !== "undefined" && Array.isArray(CHIP_NUMBER_FIELDS)) ? CHIP_NUMBER_FIELDS : [];
+const SAFE_CHIP_BOOLEAN_FIELDS = (typeof CHIP_BOOLEAN_FIELDS !== "undefined" && Array.isArray(CHIP_BOOLEAN_FIELDS)) ? CHIP_BOOLEAN_FIELDS : [];
+const SAFE_CHIP_CSS_SIZE_FIELDS = (typeof CHIP_CSS_SIZE_FIELDS !== "undefined" && Array.isArray(CHIP_CSS_SIZE_FIELDS)) ? CHIP_CSS_SIZE_FIELDS : [];
 const OPT = Object.freeze({
     color_mode: [
         { value: "ha_theme",    label: "Follow my Home Assistant theme" }, { value: "entity",      label: "Follow another entity (e.g. the sun)" },
@@ -689,13 +694,13 @@ class AtmosphericWeatherCardEditor extends LitElement {
     _normalizeChipTypes(chip) {
         if (!chip || typeof chip !== "object" || Array.isArray(chip)) return chip;
         const out = { ...chip };
-        for (const key of CHIP_NUMBER_FIELDS) {
+        for (const key of SAFE_CHIP_NUMBER_FIELDS) {
             if (key in out) out[key] = this._coerceNumberLike(out[key]);
         }
-        for (const key of CHIP_CSS_SIZE_FIELDS) {
+        for (const key of SAFE_CHIP_CSS_SIZE_FIELDS) {
             if (key in out) out[key] = this._normalizeCssSizeValue(out[key]);
         }
-        for (const key of CHIP_BOOLEAN_FIELDS) {
+        for (const key of SAFE_CHIP_BOOLEAN_FIELDS) {
             if (key in out) out[key] = this._coerceBooleanLike(out[key]);
         }
         for (const tKey of ["ring_thresholds", "bar_thresholds"]) {
@@ -711,10 +716,10 @@ class AtmosphericWeatherCardEditor extends LitElement {
     }
     _normalizeConfigTypes(obj) {
         if (!obj || typeof obj !== "object") return obj;
-        for (const key of TOP_LEVEL_NUMBER_FIELDS) {
+        for (const key of SAFE_TOP_LEVEL_NUMBER_FIELDS) {
             if (key in obj) obj[key] = this._coerceNumberLike(obj[key]);
         }
-        for (const key of TOP_LEVEL_BOOLEAN_FIELDS) {
+        for (const key of SAFE_TOP_LEVEL_BOOLEAN_FIELDS) {
             if (key in obj) obj[key] = this._coerceBooleanLike(obj[key]);
         }
         if ("card_height" in obj) obj.card_height = this._normalizeCardHeight(obj.card_height);

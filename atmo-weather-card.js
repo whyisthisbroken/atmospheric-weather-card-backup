@@ -8,6 +8,7 @@ console.info(
 );
 try { CSS.registerProperty({ name: '--awc-ring-pct', syntax: '<percentage>', inherits: true, initialValue: '0%' }); } catch (_) {}
 // CONSTANTS & CONFIGURATION
+const EDITOR_IMPORT_VERSION = "6.0.1";
 const NIGHT_MODES = Object.freeze([
     'dark', 'night', 'evening', 'on', 'true', 'below_horizon'
 ]);
@@ -1046,8 +1047,11 @@ class AtmosphericWeatherCard extends HTMLElement {
         this._handleWeatherChange(weatherState, newParams, hasNightChanged);
     }
     static async getConfigElement() {
-        if (!customElements.get("atmo-weather-card-editor")) 
-        { await import("./atmo-weather-card-editor.js"); }
+        if (!customElements.get("atmo-weather-card-editor")) {
+            const editorUrl = new URL("./atmo-weather-card-editor.js", import.meta.url);
+            editorUrl.searchParams.set("v", EDITOR_IMPORT_VERSION);
+            await import(editorUrl.href);
+        }
         return document.createElement("atmo-weather-card-editor");
     }
     static getStubConfig(hass) {
