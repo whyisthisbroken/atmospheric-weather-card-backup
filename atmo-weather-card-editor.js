@@ -20,6 +20,11 @@ const POSITION_GRIDS = Object.freeze({
         cells: [
             ["top-left",    "top-center",    "top-right"], ["left",        "center",        "right"], ["bottom-left", "bottom-center", "bottom-right"]]},
     chip_area_position: { cells: [["top-left","top-center","top-right"],["left","center","right"],["bottom-left","bottom-center","bottom-right"]] }});
+const TOP_LEVEL_NUMBER_FIELDS = Object.freeze([]);
+const TOP_LEVEL_BOOLEAN_FIELDS = Object.freeze([]);
+const CHIP_NUMBER_FIELDS = Object.freeze([]);
+const CHIP_CSS_SIZE_FIELDS = Object.freeze([]);
+const CHIP_BOOLEAN_FIELDS = Object.freeze([]);
 class AtmosphericWeatherCardEditor extends LitElement {
     static get properties() {
         return {
