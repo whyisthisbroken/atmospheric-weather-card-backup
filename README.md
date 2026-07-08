@@ -6,9 +6,8 @@
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/whyisthisbroken/atmo-weather-card/blob/main/LICENSE)
 [![GitHub release](https://img.shields.io/github/v/release/whyisthisbroken/atmo-weather-card)](https://github.com/whyisthisbroken/atmo-weather-card/releases)
 [![GitHub last commit](https://img.shields.io/github/last-commit/whyisthisbroken/atmo-weather-card)](https://github.com/whyisthisbroken/atmo-weather-card/commits/main)
-
+<h2>Animated weather card for Home Assistant Lovelace dashboards</h2>
 </div>
-<h1>Animated weather card for Home Assistant Lovelace dashboards.</h1>
 
 ### Features
 - Animated weather display
