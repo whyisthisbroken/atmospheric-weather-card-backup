@@ -1,6 +1,6 @@
 /**
  * ATMO WEATHER CARD
- * Version: 6.2.1
+ * Version: 6.3
  */
 console.info(
     "%c ATMO WEATHER CARD ",
