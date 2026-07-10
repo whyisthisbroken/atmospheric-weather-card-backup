@@ -1,8 +1,6 @@
 export const TWO_PI = Math.PI * 2;
 
 export {
-  drawAirships,
-  drawBalloons,
   drawBirds,
   drawPlanes,
 } from "./atmo-weather-fauna.js";
@@ -830,10 +828,8 @@ export function renderAnimationFrame(card, bg, mid, fg, w, h, dpr, effectiveWind
   if (fx >= 1 && glowActive && glowActive.drawPhase === "mid-post")
     card._drawCelestialGlow(mid, w, h);
   if (fauna >= 1) card._drawBirds(mid, w, h);
-  if (fauna >= 1) card._drawBalloons(mid, w, h);
   drawClouds(card, mid, card._fgClouds, w, h, effectiveWind);
   if (fauna >= 2) card._drawPlanes(mid, w, h);
-  if (fauna >= 2) card._drawAirships(mid, w, h);
 
   card._drawLightning(fg, w, h);
   card._drawRain(fg, w, h, effectiveWind);

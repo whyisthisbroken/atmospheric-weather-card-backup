@@ -1,13 +1,11 @@
 /**
  * ATMO WEATHER CARD
- * Version: 6.1.0-test-new-code-structure
+ * Version: 6.5
  */
 import {
   advanceWindAndPulse,
   CloudShapeGenerator,
-  drawAirships,
   drawAurora,
-  drawBalloons,
   drawBirds,
   drawCelestialClouds,
   drawComets,
@@ -42,7 +40,7 @@ try {
   });
 } catch (_) {}
 // CONSTANTS & CONFIGURATION
-const EDITOR_IMPORT_VERSION = "6.1.0-test-new-code-structure";
+const EDITOR_IMPORT_VERSION = "6.5";
 const NIGHT_MODES = Object.freeze([
   "dark",
   "night",
@@ -605,8 +603,6 @@ const PARTICLE_ARRAYS = Object.freeze([
   "_shootingStars",
   "_planes",
   "_birds",
-  "_balloons",
-  "_airships",
   "_comets",
   "_celestialClouds",
 ]);
@@ -1774,24 +1770,10 @@ class AtmosphericWeatherCard extends HTMLElement {
     const rawFlockSize =
       config.fauna_bird_flock_size != null
         ? parseInt(config.fauna_bird_flock_size, 10)
-        : 8;
+        : 6;
     this._faunaBirdFlockSize = Number.isFinite(rawFlockSize)
       ? Math.max(1, Math.min(20, rawFlockSize))
-      : 8;
-    const rawBalloonDensity =
-      config.fauna_balloon_density != null
-        ? parseFloat(config.fauna_balloon_density)
-        : 1.0;
-    this._faunaBalloonDensity = Number.isFinite(rawBalloonDensity)
-      ? Math.max(0.5, Math.min(2.0, rawBalloonDensity))
-      : 1.0;
-    const rawAirshipDensity =
-      config.fauna_airship_density != null
-        ? parseFloat(config.fauna_airship_density)
-        : 1.0;
-    this._faunaAirshipDensity = Number.isFinite(rawAirshipDensity)
-      ? Math.max(0.5, Math.min(2.0, rawAirshipDensity))
-      : 1.0;
+      : 6;
     const rawDpr = config.perf_dpr != null ? config.perf_dpr : preset.perf_dpr;
     const parsedDpr = parseFloat(rawDpr);
     this._perfDpr = Number.isFinite(parsedDpr)
@@ -6466,14 +6448,8 @@ class AtmosphericWeatherCard extends HTMLElement {
   _drawBirds(ctx, w, h) {
     drawBirds(this, ctx, w, h);
   }
-  _drawBalloons(ctx, w, h) {
-    drawBalloons(this, ctx, w, h);
-  }
   _drawPlanes(ctx, w, h) {
     drawPlanes(this, ctx, w, h, CONTRAIL_OFFSETS, PLANE_PATH, TRAIL_CAP_PLANE);
-  }
-  _drawAirships(ctx, w, h) {
-    drawAirships(this, ctx, w, h);
   }
   // ANIMATION LOOP
   _animate(timestamp) {
