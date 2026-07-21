@@ -1,6 +1,6 @@
 /**
  * ATMO WEATHER CARD
- * Version: 6.6.3
+ * Version: 6.6.4
  */
 import {
   advanceWindAndPulse,
@@ -41,7 +41,7 @@ try {
   });
 } catch (_) {}
 // CONSTANTS & CONFIGURATION
-const EDITOR_IMPORT_VERSION = "6.6.3";
+const EDITOR_IMPORT_VERSION = "6.6.4";
 const NIGHT_MODES = Object.freeze([
   "dark",
   "night",
@@ -2105,13 +2105,24 @@ class AtmosphericWeatherCard extends HTMLElement {
       const parsed = parseInt(precisionRaw, 10);
       if (Number.isFinite(parsed)) {
         const precision = Math.max(0, Math.min(2, parsed));
-        const fmt = this._getPrecisionFmt(lang, precision);
+        const fmt = this._getFixedPrecisionFmt(lang, precision);
         if (fmt) return fmt.format(rawValue);
       }
     }
     if (haFormatted) return fallbackFormatted;
     if (this._numFmt) return this._numFmt.format(rawValue);
     return String(rawValue);
+  }
+  _getFixedPrecisionFmt(lang, precision) {
+    const key = `${lang}|${precision}`;
+    if ((this._fixedPrecisionFmtCache && this._fixedPrecisionFmtCache[0]) === key)
+      return this._fixedPrecisionFmtCache[1];
+    const fmt = new Intl.NumberFormat(lang, {
+      minimumFractionDigits: precision,
+      maximumFractionDigits: precision,
+    });
+    this._fixedPrecisionFmtCache = [key, fmt];
+    return fmt;
   }
   // FORECAST DATA LAYER
   _syncFc() {
