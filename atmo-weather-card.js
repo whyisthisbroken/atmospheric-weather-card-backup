@@ -1,6 +1,6 @@
 /**
  * ATMO WEATHER CARD
- * Version: 6.6
+ * Version: 6.6.2
  */
 import {
   advanceWindAndPulse,
@@ -41,7 +41,7 @@ try {
   });
 } catch (_) {}
 // CONSTANTS & CONFIGURATION
-const EDITOR_IMPORT_VERSION = "6.6";
+const EDITOR_IMPORT_VERSION = "6.6.2";
 const NIGHT_MODES = Object.freeze([
   "dark",
   "night",
@@ -3924,6 +3924,8 @@ class AtmosphericWeatherCard extends HTMLElement {
           "";
       const fancyCanUseAttrFormat =
         isWeather && typeof hass.formatEntityAttributeValue === "function";
+      const hasManualPrecision =
+        chip.value_precision !== undefined && chip.value_precision !== null;
       const fancyBaseFormatted = fancyCanUseAttrFormat
         ? hass.formatEntityAttributeValue(sensor, "temperature")
         : formatted;
@@ -3938,7 +3940,13 @@ class AtmosphericWeatherCard extends HTMLElement {
               fancyHaFormatted,
             )
           : formatted;
-      const fancyUnitStr = hasUnitFormat ? unit : rawUnit;
+      const systemTempUnit =
+        hass && hass.config && hass.config.unit_system
+          ? hass.config.unit_system.temperature || ""
+          : "";
+      const fancyUnitStr = hasUnitFormat
+        ? unit
+        : rawUnit || (hasManualPrecision && isWeather ? systemTempUnit : "");
       inner = `${escapeHtml(fancyVal)}<span class="fancy-unit">${escapeHtml(fancyUnitStr)}</span>`;
     } else {
       inner = hasUnitFormat
@@ -6403,5 +6411,3 @@ if (!customElements.get(CARD_NAME)) {
       "Animated weather effects with rain, snow, clouds, stars and more",
   });
 }
-
-
