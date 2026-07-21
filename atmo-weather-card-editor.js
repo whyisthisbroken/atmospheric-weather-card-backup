@@ -3109,6 +3109,21 @@ class AtmosphericWeatherCardEditor extends LitElement {
           update((e.detail && e.detail.value) || {});
         }}
       ></ha-form>`;
+    const entityResetForm = (entityKey, attrKey, selector) =>
+      html`<ha-form
+        .hass=${this.hass}
+        .data=${chip}
+        .schema=${[{ name: entityKey, selector }]}
+        .computeLabel=${this._chipLabel}
+        .computeHelper=${this._chipHelper}
+        @value-changed=${(e) => {
+          e.stopPropagation();
+          const value = (e.detail && e.detail.value) || {};
+          const next = { ...value };
+          if (next[entityKey] !== chip[entityKey]) delete next[attrKey];
+          update(next);
+        }}
+      ></ha-form>`;
     const cssField = (key, label, placeholder) =>
       html`<div class="css-field">
         <span class="css-field-label">${label}</span>
@@ -3183,17 +3198,15 @@ class AtmosphericWeatherCardEditor extends LitElement {
       ? chipForm([
           { name: "entity", selector: { entity: { domain: "weather" } } },
         ])
-      : chipForm([
-          { name: "entity", selector: { entity: {} } },
-          ...(entityId
-            ? [
-                {
-                  name: "attribute",
-                  selector: { attribute: { entity_id: entityId } },
-                },
-              ]
-            : []),
-        ]);
+      : html`${entityResetForm("entity", "attribute", { entity: {} })}
+        ${entityId
+          ? chipForm([
+              {
+                name: "attribute",
+                selector: { attribute: { entity_id: entityId } },
+              },
+            ])
+          : ""}`;
     const emptyNudge = !hasEntity
       ? html`<div class="chip-nudge info">
           <ha-icon
@@ -3365,7 +3378,7 @@ class AtmosphericWeatherCardEditor extends LitElement {
       </div>
       ${chip.hide_label !== true
         ? html`${chipForm([{ name: "name", selector: { text: {} } }])}
-            ${chipForm([{ name: "name_sensor", selector: { entity: {} } }])}
+            ${entityResetForm("name_sensor", "name_attribute", { entity: {} })}
             ${nameSensorId
               ? chipForm([
                   {
@@ -3626,9 +3639,9 @@ class AtmosphericWeatherCardEditor extends LitElement {
         ></label>
       </div>
       ${chip.hide_sub_value !== true
-        ? html`${chipForm([
-            { name: "sub_value_entity", selector: { entity: {} } },
-          ])}
+        ? html`${entityResetForm("sub_value_entity", "sub_value_attribute", {
+            entity: {},
+          })}
           ${subEntityId
             ? chipForm([
                 {
@@ -3953,7 +3966,9 @@ class AtmosphericWeatherCardEditor extends LitElement {
               Use a different entity for the ${prefix} value instead of the
               chip's main entity.
             </div>
-            ${chipForm([{ name: "gauge_entity", selector: { entity: {} } }])}
+            ${entityResetForm("gauge_entity", "gauge_attribute", {
+              entity: {},
+            })}
             ${gaugeEntityId
               ? chipForm([
                   {
