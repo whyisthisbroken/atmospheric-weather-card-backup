@@ -40,7 +40,7 @@
 
 > [!NOTE]
 > Parts of the development use AI-assisted coding to move faster than doing everything by hand would allow.
-<br>
+> <br>
 
 ## Installation
 
@@ -601,13 +601,13 @@ The card has a visual editor for setting up layouts. All YAML settings are liste
 <details>
 <summary><strong>Theme & Filters</strong></summary>
 
-| Option                 | Type      | Default   | Description                                                                                                                                                                                                                                                             |
-| :--------------------- | :-------- | :-------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Option                 | Type      | Default   | Description                                                                                                                                                                                                                                                            |
+| :--------------------- | :-------- | :-------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `card_color_mode`      | `string`  | `auto`    | Controls the card's color scheme. By default, it follows your Home Assistant theme. Set to `entity` to follow a `theme_entity`, or `force_dark` / `force_light` to lock the look. Also accepts `night` / `day` to override the sky content. See [Colors](#color-mode). |
-| `card_filter`          | `string`  | —         | Applies a visual filter preset to the weather canvas. Options: `darken`, `vivid`, `muted`, `warm`.                                                                                                                                                                      |
-| `celestial_moon_style` | `string`  | `default` | The moon's glow color. `default` follows the theme (muted blue in light mode, white in dark mode). Other options: `blue`, `yellow`, `purple`, `grey`.                                                                                                                   |
-| `card_mask_vertical`   | `boolean` | `true`    | _(Immersive only)_ Fades the top and bottom edges. Set to `false` to disable.                                                                                                                                                                                           |
-| `card_mask_horizontal` | `boolean` | `true`    | _(Immersive only)_ Fades the left and right edges. Set to `false` to disable.                                                                                                                                                                                           |
+| `card_filter`          | `string`  | —         | Applies a visual filter preset to the weather canvas. Options: `darken`, `vivid`, `muted`, `warm`.                                                                                                                                                                     |
+| `celestial_moon_style` | `string`  | `default` | The moon's glow color. `default` follows the theme (muted blue in light mode, white in dark mode). Other options: `blue`, `yellow`, `purple`, `grey`.                                                                                                                  |
+| `card_mask_vertical`   | `boolean` | `true`    | _(Immersive only)_ Fades the top and bottom edges. Set to `false` to disable.                                                                                                                                                                                          |
+| `card_mask_horizontal` | `boolean` | `true`    | _(Immersive only)_ Fades the left and right edges. Set to `false` to disable.                                                                                                                                                                                          |
 | `theme_entity`         | `string`  | —         | Drives the card's color scheme from any entity's state instead of your HA theme. Commonly set to `sun.sun` to sync the card with sunrise/sunset. See [Colors](#color-mode).                                                                                            |
 
 </details>
@@ -678,7 +678,8 @@ Each entry inside the `chips` list accepts the following keys.
 | `attribute`             | `string`  | —           | Read a specific attribute of the entity instead of its state (e.g., `humidity` on a weather entity).                                                                                                                                                                                                                                                                                           |
 | `forecast`              | `string`  | —           | Set to `daily` or `hourly` to show forecast data instead of live entity data. The chip's name is generated automatically (day names for daily, time for hourly). Requires the entity to be a weather entity.                                                                                                                                                                                   |
 | `forecast_offset`       | `number`  | `0`         | Which forecast entry to display. `0` = today/now, `1` = tomorrow/next hour, and so on. Daily goes up to 6, hourly up to 23.                                                                                                                                                                                                                                                                    |
-| `forecast_precision`    | `number`  | —           | Number of decimal places for forecast values (0–2).                                                                                                                                                                                                                                                                                                                                            |
+| `forecast_precision`    | `number`  | —           | Maximum number of decimal places for forecast values (0–2). Only limits the number shown; trailing zero decimals are trimmed (e.g. a whole number stays without a decimal point even at precision `1` or `2`).                                                                                                                                                                                 |
+| `value_precision`       | `number`  | —           | Forces the chip's main value to always show exactly this many decimal places (0–2), padding with zeros if needed (e.g. `22` becomes `22.0` at precision `1`). Leave unset to use Home Assistant's own display precision for the entity/attribute ("Auto"). Does not apply to forecast chips — use `forecast_precision` for those.                                                              |
 | `forecast_show_min`     | `boolean` | `false`     | Shows the low/high temperature range (e.g., `8 – 18`) instead of only the high. Only works with `attribute: temperature` on daily forecasts. In the editor this is internally mapped to sub-value options (`sub_value_attribute: templow` and `sub_value_position`).                                                                                                                           |
 | `unit_format`           | `string`  | —           | Replaces the unit shown after the value. Placed directly after the value with no space, e.g. `°` turns `12 °C` into `12°`.                                                                                                                                                                                                                                                                     |
 | `name`                  | `string`  | —           | Optional label shown before the value (e.g., `Wind`). For forecast chips, this overrides the auto-generated day/time name.                                                                                                                                                                                                                                                                     |
@@ -692,7 +693,7 @@ Each entry inside the `chips` list accepts the following keys.
 | `height`                | `string`  | —           | Sets the chip height in pixels. Use `40px` (or `40`, which is normalized to `40px`).                                                                                                                                                                                                                                                                                                           |
 | `overflow`              | `string`  | `ellipsis`  | How text exceeding `width` is handled. Options: `ellipsis` (cuts off with `…`), `clip` (cuts off without indicator), `wrap` (breaks onto a second line), `marquee` (scrolls horizontally).                                                                                                                                                                                                     |
 | `label_overflow`        | `string`  | `ellipsis`  | How the name label handles overflow. Same options as `overflow`.                                                                                                                                                                                                                                                                                                                               |
-| `marquee_speed`         | `number`  | `30`        | Scroll speed in pixels per second when any overflow mode is `marquee` (`overflow`, `label_overflow`, or `sub_value_overflow`). Minimum `5`.                                                                                                                                                                                                                                                   |
+| `marquee_speed`         | `number`  | `30`        | Scroll speed in pixels per second when any overflow mode is `marquee` (`overflow`, `label_overflow`, or `sub_value_overflow`). Minimum `5`.                                                                                                                                                                                                                                                    |
 | `marquee_rtl`           | `boolean` | `false`     | Reverses marquee direction (scrolls right-to-left) for all marquee-based text overflows.                                                                                                                                                                                                                                                                                                       |
 | `card_tap_action`       | `object`  | `more-info` | A standard Home Assistant [tap action](https://www.home-assistant.io/dashboards/actions/) scoped to this chip.                                                                                                                                                                                                                                                                                 |
 | `name_sensor`           | `string`  | —           | An entity whose state (or attribute) is used as the chip's dynamic name label. Updates in real time.                                                                                                                                                                                                                                                                                           |
@@ -964,6 +965,28 @@ The first chip shows tomorrow's temperature range (low – high) with a weather 
 | `forecast_precision` | Decimal places for the value (0–2).                                                                 |
 | `forecast_show_min`  | Shows the low/high range. Daily temperature only. Editor maps this to sub-value options internally. |
 | `unit_format`        | Replaces the unit string (e.g., `°`). Works on both live and forecast chips.                        |
+
+</details>
+
+<details>
+<summary><strong>Value precision</strong></summary>
+
+<br>
+
+By default (no `value_precision` set), a chip's main value uses Home Assistant's own **Display Precision** for that entity/attribute — the same rounding shown in More Info dialogs and other Lovelace cards. This is the "Auto" option in the editor.
+
+Set `value_precision` to `0`, `1`, or `2` to override this and always show an exact number of decimals, even for whole numbers (e.g. `22` becomes `22.0` at precision `1`).
+
+```yaml
+chips:
+  - entity: sensor.outside_temperature
+    value_precision: 1
+  - entity: sensor.outside_humidity
+    value_precision: 0
+```
+
+> [!NOTE]
+> `value_precision` affects a chip's main value only. Forecast chips use the separate `forecast_precision` option instead, which only limits the maximum number of decimals shown and trims trailing zeros.
 
 </details>
 
@@ -1256,6 +1279,18 @@ star_animation_speed: 0.6 # Stars only; twinkle speed (0.0-2.0)
 1. Verify `weather_entity` exists and is currently available in Home Assistant.
 2. Confirm the entity has valid state/attributes (temperature, wind, etc.).
 3. If unavailable, fix entity availability first, then reload the dashboard.
+
+### Chip value shows no decimal places, or the unit disappeared
+
+1. On "Auto" (no `value_precision` set), decimal places follow Home Assistant's own **Display Precision** for that entity/attribute (**Settings → Devices & services → Entities** → your entity → **Advanced settings**). The card does not control this.
+2. Set `value_precision` (`0`, `1`, or `2`) on the chip to force an exact number of decimals regardless of the entity's own precision.
+3. Make sure you're on v6.6.4 or later — earlier versions could drop the unit or trim trailing zero decimals while `value_precision` was set.
+
+### Attribute shows N/A after changing a chip's sensor
+
+1. Since v6.6.5, changing a chip's entity (`entity`, `name_sensor`, `sub_value_entity`, `gauge_entity`) automatically clears its attribute field, since the previously selected attribute may not exist on the new entity.
+2. On older versions, manually clear or re-select the attribute field after switching the entity.
+3. Update to the latest release to get this automatic reset.
 
 ### No night effects (stars/comets) are visible
 
